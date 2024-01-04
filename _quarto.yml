@@ -13,7 +13,8 @@ website:
     right:
       - href: index.html
         text: Home
-      - about.html
+      - href: about.html
+        text: About
 
 format:
   html:
