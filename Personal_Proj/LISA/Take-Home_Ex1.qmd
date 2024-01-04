@@ -1,5 +1,5 @@
 ---
-title: "Take-Home_Ex1"
+title: "Local Indicators of Spatial Association (LISA)"
 date: '24 November 2023'
 date-modified: 'last-modified'
 format: html

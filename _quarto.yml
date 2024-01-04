@@ -9,7 +9,6 @@ website:
         menu: 
           - text: Local Indicators of Spatial Association (LISA)
             href: Personal_Proj/LISA/Take-Home_Ex1.html
-          - text: Spatial Interaction Model
     right:
       - href: index.html
         text: Home
