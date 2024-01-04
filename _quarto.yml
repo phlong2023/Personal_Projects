@@ -2,7 +2,7 @@ project:
   type: website
 
 website:
-  title: "Personal_Projects"
+  title: "Personal Projects"
   navbar:
     left:
       - text: Personal Projects
@@ -10,7 +10,6 @@ website:
           - text: Local Indicators of Spatial Association (LISA)
             href: Personal_Proj/LISA/Take-Home_Ex1.html
           - text: Spatial Interaction Model
-            href: Personal_Proj/Spatial_Interaction/Take-Home_Ex2.html
     right:
       - href: index.html
         text: Home
