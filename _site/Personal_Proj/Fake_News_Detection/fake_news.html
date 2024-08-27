@@ -99,7 +99,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
 
-<link rel="stylesheet" href="../../styles.css">
 </head>
 
 <body class="nav-fixed">
@@ -160,9 +159,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#untangling-fact-from-falsehood-using-nlp" id="toc-untangling-fact-from-falsehood-using-nlp" class="nav-link active" data-scroll-target="#untangling-fact-from-falsehood-using-nlp"><strong>Untangling Fact from Falsehood Using NLP</strong></a>
-  <ul class="collapse">
-  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#methodology" id="toc-methodology" class="nav-link" data-scroll-target="#methodology">Methodology</a></li>
   <li><a href="#import-libraries-and-datasets" id="toc-import-libraries-and-datasets" class="nav-link" data-scroll-target="#import-libraries-and-datasets">Import Libraries and Datasets</a>
   <ul class="collapse">
@@ -172,6 +169,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation">Data Preparation</a></li>
   <li><a href="#text-pre-processing" id="toc-text-pre-processing" class="nav-link" data-scroll-target="#text-pre-processing">Text Pre-processing</a></li>
+  <li><a href="#document-classification---baseline" id="toc-document-classification---baseline" class="nav-link" data-scroll-target="#document-classification---baseline">Document Classification - Baseline</a>
+  <ul class="collapse">
+  <li><a href="#simple-train---test-model-evaluation" id="toc-simple-train---test-model-evaluation" class="nav-link" data-scroll-target="#simple-train---test-model-evaluation">Simple Train - Test Model Evaluation</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -208,8 +208,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="untangling-fact-from-falsehood-using-nlp" class="level1">
-<h1><strong>Untangling Fact from Falsehood Using NLP</strong></h1>
 <p>This project was done as part of ISSS609: Text Analytics and Applications. The analysis was performed jointly with Chock Wan Kee, Denise Tan Shi Min, Lim Li Ying, Noel Ng Ser Ying, and Tan Yanni Regine.</p>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
@@ -252,7 +250,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> datetime</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> itertools</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> itertools</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn <span class="im">import</span> svm</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split, cross_validate, StratifiedKFold</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.feature_extraction.text <span class="im">import</span> TfidfVectorizer, CountVectorizer</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> confusion_matrix, ConfusionMatrixDisplay, classification_report, roc_auc_score, roc_curve, make_scorer, accuracy_score, precision_score, recall_score, f1_score</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.calibration <span class="im">import</span> CalibratedClassifierCV</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> LatentDirichletAllocation</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.utils <span class="im">import</span> resample</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> StandardScaler</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.sparse <span class="im">import</span> hstack</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xgboost <span class="im">as</span> xgb</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> textblob <span class="im">import</span> TextBlob</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    importlib.import_module(<span class="st">'textblob'</span>)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">ImportError</span>:</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    subprocess.check_call([<span class="st">'pip'</span>, <span class="st">'install'</span>, <span class="st">'textblob'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="load-dataset" class="level3">
@@ -743,12 +764,186 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Alternatively, it is also possible to determine the top 20 most common tokens in the entire corpus. Due to the large number of articles in the corpus, we can sample just the first 1,000 articles in order to get a glimpse of the top 20 most common tokens.</p>
 <div class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>first1000 <span class="op">=</span> <span class="bu">list</span>(itertools.chain.from_iterable(df[<span class="st">'text_preprocessed'</span>][:<span class="dv">1000</span>]))</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'most frequent tokens in first 100 doc </span><span class="ch">\n</span><span class="st">'</span>, nltk.FreqDist(first1000).most_common(<span class="dv">20</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'most frequent tokens in first 1000 articles </span><span class="ch">\n</span><span class="st">'</span>, nltk.FreqDist(first1000).most_common(<span class="dv">20</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>most frequent tokens in first 100 doc 
+<pre><code>most frequent tokens in first 1000 articles 
  [('trump', 3216), ('presid', 1328), ('state', 1272), ('peopl', 891), ('republican', 808), ('new', 693), ('obama', 692), ('year', 663), ('democrat', 651), ('like', 643), ('hous', 641), ('donald', 627), ('elect', 611), ('white', 610), ('support', 597), ('nation', 583), ('clinton', 572), ('parti', 572), ('report', 563), ('vote', 559)]</code></pre>
 </div>
 </div>
+<p>We can see that topics related to United States (U.S) politics dominate the top tokens. These include tokens related to the U.S presidents such as Donald Trump or Barack Obama.</p>
+</section>
+<section id="document-classification---baseline" class="level2">
+<h2 class="anchored" data-anchor-id="document-classification---baseline">Document Classification - Baseline</h2>
+<p>As the project aims to understand the impact of using sentiment analysis and topic modelling to improve the accuracy of fake news classification using machine learning techniques, a baseline classification model is trained using only the processed data that excludes additional features.</p>
+<p>Two model evaluation methods are explored in this project. The Train-Test Split Method is used and validated using the evaluation metrics, the K-Fold Cross Validation Method is used. As mentioned in the previous section, three classification models are employed in this project: XGBoost, SVM, and Logistic Regression.</p>
+<p>First, the processed data is split into 70% for training and 30% for testing. This ratio is decided as it provides sufficient data to train the classification models (31,429 records), and adequate data to evaluate the performance of the models (13,469 records). Furthermore, this split also balances the computational resources required to train the models and leaves enough data for K-Fold Cross Validation.</p>
+<p>Next, the processed data is vectorized using the TfidfVectorizer, which converts raw strings into a matrix of Term Frequency-Inverse Document Frequency (TF-IDF) features. This allows a higher weightage to be assigned to words that occur less frequently in the corpus as these words are more discriminative. The split X_train data is vectorized using the .fit_transform() function while the X_test data is vectorized using the .transform() function.</p>
+<p>Next, we define a function to return the evaluation results for each model. The function makes predictions using the test data and calculates the evaluation metrics. The metrics are calculated using the classification_report() function from sklearn and it includes the precision, recall, f1-score, and support. The function also generates the confusion matrix created using the confusion_matrix() function from sklearn and the AUC-ROC curve, which plots true positive rate against false positive rate. This function can be called with each model to evaluate them separately.</p>
+<p>Using the train-test split method alone may introduce bias that is an over- or underestimation of the performance of a model. K-fold cross-validation can be used to conduct a systematic evaluation of the model (Kohavi, 1995).</p>
+<p>To achieve this, we wrote another function to evaluate each model using the k-fold evaluation method, where k = 10 in this project. This is implemented using the StratifiedKFold function from sklearn. This function splits the entire vectorized data set into 10 equal-sized parts with approximately similar proportions of class 0 and class 1 data. Next, we evaluated each model 10 times, each time using one fold as the validation set, and the average of the performance over 10 rounds of training and validation is used as the overall performance metric. This is achieved using the cross_validate() function from sklearn, and the precision, recall, f1-score, and support scores are created using the make_scorer() function from sklearn.</p>
+<p>After obtaining the results of the baseline model, the data frame is fitted with features from the subsequent analyses – sentiment analysis using VADER and TextBlob, and topic modelling. The train-test split method and k-fold cross-validation are applied to the corpus with the addition of the following features:</p>
+<ul>
+<li><p>Compound score from VADER</p></li>
+<li><p>Polarity and Subjectivity scores from TextBlob</p></li>
+<li><p>Compound score from VADER, and Polarity and Subjectivity scores from TextBlob</p></li>
+<li><p>Polarity and Subjectivity scores from TextBlob, and most dominant topic from LDA</p></li>
+</ul>
+<p>But first, let’s consider the performance of a simple baseline solution without any additional features. This can be performed using the code chunks below.</p>
+<section id="simple-train---test-model-evaluation" class="level3">
+<h3 class="anchored" data-anchor-id="simple-train---test-model-evaluation">Simple Train - Test Model Evaluation</h3>
+<p>In this section, our baseline solution will only split the data into a train and test set in order to evaluate the performance of each model.</p>
+<p>First, we define variables to store the independent variable, or the text, and the dependent variable, or the class of Fake or True.</p>
+<div class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df[<span class="st">'text_preprocessed'</span>]</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'class'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, we split the data into a train and test set in order to make sure the models can be trained and evaluated on separate data sets, or in other words, to make sure that each model is not being tested on data it has seen during training.</p>
+<div class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(X, y, test_size<span class="op">=</span><span class="fl">0.3</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Because the TfidfVectorizer will not work with word tokens, our tokens would need to be passed through a dummy function first. Essentially, the TfidfVectorizer has its own tokenizer argument meant to tokenize input strings. By inputing our dummy function as a tokenizer, we can use the tokens we have already created.</p>
+<div class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dummy(tokens):</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tokens</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>vectorizer <span class="op">=</span> TfidfVectorizer(tokenizer<span class="op">=</span>dummy, </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                             preprocessor<span class="op">=</span>dummy,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>                             token_pattern<span class="op">=</span><span class="va">None</span>, </span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>                             ngram_range <span class="op">=</span> (<span class="dv">1</span>,<span class="dv">2</span>), </span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>                             min_df <span class="op">=</span> <span class="fl">0.1</span>)</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>                             </span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>X_train <span class="op">=</span> vectorizer.fit_transform(X_train)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>X_test <span class="op">=</span> vectorizer.transform(X_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, we can create a dictionary of models we would like to evaluate. For this analysis, we will use three models discussed during the course: XGBoost, Support Vector Machine (SVM), and Logistic Regression.</p>
+<div class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>models <span class="op">=</span> {</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">'XGBoost'</span>: xgb.XGBClassifier(),</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SVM'</span>: CalibratedClassifierCV(svm.LinearSVC()),</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'LogReg'</span>: LogisticRegression(class_weight<span class="op">=</span><span class="st">'balanced'</span>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A function called model_evaluate is defined in order to evaluate each model and return evaluations in terms of the visualization of a confusion matrix and classification report of different metrics (F1, accuracy, precision, recall). Additionally, an ROC curve is drawn to visually evaluate the performance of the models.</p>
+<p>model_evaluate will take each model from the pre-defined dictionary, fit the training data in X_test to it, and then evaluate its performance on the test corpus in X_test.</p>
+<div class="cell" data-execution_count="20">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> model_evaluate(models, model_name):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the pipeline</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    pipeline <span class="op">=</span> Pipeline(steps<span class="op">=</span>[</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'model'</span>, models[model_name])</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit the pipeline on the training data</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    pipeline.fit(X_train, y_train)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Make predictions on the test data</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    y_pred <span class="op">=</span> pipeline.predict(X_test)</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate evaluation metrics</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'Summary report for </span><span class="sc">{}</span><span class="st">'</span>.<span class="bu">format</span>(model_name))</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Classification Report:"</span>)</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(classification_report(y_test, y_pred))</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Confusion Matrix</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Confusion Matrix:"</span>)</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>    cm <span class="op">=</span> confusion_matrix(y_test, y_pred)</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    cmplot <span class="op">=</span> ConfusionMatrixDisplay(cm)</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    cmplot.plot()</span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># AUC-ROC Curve</span></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"AUC-ROC Curve:"</span>)</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>    y_pred_proba <span class="op">=</span> pipeline.predict_proba(X_test)[:, <span class="dv">1</span>]</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>    auc_roc <span class="op">=</span> roc_auc_score(y_test, y_pred_proba)</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>    fpr, tpr, _ <span class="op">=</span> roc_curve(y_test, y_pred_proba)</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plot the ROC curve</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>    plt.plot(fpr, tpr, label<span class="op">=</span><span class="st">'ROC curve (area = </span><span class="sc">%0.4f</span><span class="st">)'</span> <span class="op">%</span> auc_roc)</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>    plt.plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">'k--'</span>)</span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a>    plt.xlim([<span class="fl">0.0</span>, <span class="fl">1.0</span>])</span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>    plt.ylim([<span class="fl">0.0</span>, <span class="fl">1.05</span>])</span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>    plt.xlabel(<span class="st">'False Positive Rate'</span>)</span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>    plt.ylabel(<span class="st">'True Positive Rate'</span>)</span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="st">'Receiver Operating Characteristic'</span>)</span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a>    plt.legend(loc<span class="op">=</span><span class="st">"lower right"</span>)</span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a>    plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The evaluation of the XGBoost model:</p>
+<div class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>model_evaluate(models,<span class="st">'XGBoost'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary report for XGBoost
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.96      0.96      0.96      6448
+           1       0.97      0.96      0.96      7022
+
+    accuracy                           0.96     13470
+   macro avg       0.96      0.96      0.96     13470
+weighted avg       0.96      0.96      0.96     13470
+
+Confusion Matrix:
+AUC-ROC Curve:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="fake_news_files/figure-html/cell-22-output-2.png" width="513" height="429"></p>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="fake_news_files/figure-html/cell-22-output-3.png" width="674" height="523"></p>
+</div>
+</div>
+<p>The evaluation of the SVM model:</p>
+<div class="cell" data-execution_count="22">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>model_evaluate(models,<span class="st">'SVM'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary report for SVM
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.92      0.94      0.93      6448
+           1       0.94      0.92      0.93      7022
+
+    accuracy                           0.93     13470
+   macro avg       0.93      0.93      0.93     13470
+weighted avg       0.93      0.93      0.93     13470
+
+Confusion Matrix:
+AUC-ROC Curve:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="fake_news_files/figure-html/cell-23-output-2.png" width="513" height="429"></p>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="fake_news_files/figure-html/cell-23-output-3.png" width="674" height="523"></p>
+</div>
+</div>
+<p>The evaluation of the Logistic Regression model:</p>
+<div class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>model_evaluate(models,<span class="st">'LogReg'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary report for LogReg
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.91      0.94      0.92      6448
+           1       0.94      0.91      0.93      7022
+
+    accuracy                           0.93     13470
+   macro avg       0.93      0.93      0.93     13470
+weighted avg       0.93      0.93      0.93     13470
+
+Confusion Matrix:
+AUC-ROC Curve:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="fake_news_files/figure-html/cell-24-output-2.png" width="513" height="429"></p>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="fake_news_files/figure-html/cell-24-output-3.png" width="674" height="523"></p>
+</div>
+</div>
+<p>Based on the evaluation of the three models, the XGBoost model can be considered to be the most effective as it achieved the highest F1-score and the highest accuracy of 96%. In order to improve the rigor of our machine learning, K-fold Cross Validation can be performed to further evaluate each of the model.</p>
 
 
 </section>
