@@ -1,8 +1,10 @@
 ---
-title: "About"
+title: "Contact"
 date-modified: 'last-modified'
 format: html
 editor: visual
 ---
 
-I am a student in the Master of IT in Business (Analytics) Program.
+**Email**: phanlong261\@gmail.com
+
+**LinkedIn**: linkedin.com/in/phanhlong/

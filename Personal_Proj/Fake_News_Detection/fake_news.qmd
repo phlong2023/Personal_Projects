@@ -1,5 +1,5 @@
 ---
-title: "Fake News Detection"
+title: "Untangling Fact from Falsehood Using NLP"
 date: '26 August 2024'
 date-modified: 'last-modified'
 format: html
@@ -10,7 +10,35 @@ execute:
 editor: visual
 ---
 
-#  Fake News Detection with Text Analytics
+# **Untangling Fact from Falsehood Using NLP**
+
+This project was done as part of ISSS609: Text Analytics and Applications. The analysis was performed jointly with Chock Wan Kee, Denise Tan Shi Min, Lim Li Ying, Noel Ng Ser Ying, and Tan Yanni Regine.
+
+## Introduction
+
+The proliferation of fake news is a growing global concern, impacting public opinion, political processes, and trust in media institutions. Fake news is defined as fabricated information that mimics news media content in form but not in organizational process or intent (Lazer, et al., 2018). The spread of misinformation poses significant challenges to foster an informed citizenry as it makes people more susceptible to political misinterpretations (Guess, et al., 2020), thereby increasing the challenge of upholding credibility and integrity of information sources.
+
+Many experiments have been designed and conducted to put Machine Learning techniques to the test in detecting fake from true news. Our project seeks to determine if detection accuracy can be improved with additional features from sentiment analysis and topic modelling.  Sentiment analysis discerns the emotional tone of text, thereby providing insights to how information is framed and its potential impact on readers. Topic modelling identifies topics according to words that co-occur frequently to assess prevalent topics present in fake news.
+
+The dataset used in this project is the “[Fake News Detection](https://www.kaggle.com/code/therealsampat/fake-news-detection/input?select=True.csv)” dataset from Kaggle. It contains fake and real news from 31 May 2015 to 19 Feb 2018. The two classes of data are separated into the respective “Fake” and “True” files, which will be combined for our analysis.
+
+## Methodology
+
+We adopted a sequential approach to the analysis that is summarized in the flow chart below:
+
+![](images/clipboard-3748887779.png)
+
+Firstly, the separate “Fake” and “True” files had to be merged into one for analysis. To differentiate between the fake and real news after merging for classification, labels were assigned to each record from the same file, 0 for real news and 1 for fake news. After merging both files, the title and text columns are concatenated to create a corpus for text preprocessing.
+
+Next, preprocessing steps involving tokenization, stop word removal, and stemming are applied on the corpus. It was discovered that some words, such as days of the week and “say” or “said”, appeared in high frequency and did not help to distinguish one document from another. It is reasonable that these words appear frequently in news reports as they provide details on incidents which often include reported speech. In view of the above, we included these words as stop words to be removed from the corpus.
+
+While some experiments have shown that sentiment analysis is useful in different systems and tools used for detecting fake news, few experiments included the use of topic modelling to train the classification model. In our methodology, the sentiment analysis scores, and most dominant topics are included as features to train and test the classification algorithm.
+
+One challenge is the size of the corpus containing more than 40,000 documents. Choosing a model that can work efficiently with this corpus size will be a crucial factor.
+
+Finally, three classification methods are used to find the best performing model in classifying fake news.
+
+The following sections will go into the codes used and describe their functions.
 
 ## Import Libraries and Datasets
 
@@ -21,6 +49,22 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem.porter import PorterStemmer
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+import gensim
+from gensim.parsing.preprocessing import STOPWORDS
+from gensim.models import CoherenceModel
+
+import importlib
+import subprocess
+import re
+import warnings
+import datetime
+import itertools
 ```
 
 ### Load Dataset
@@ -38,4 +82,137 @@ df_fake.head()
 
 ```{python}
 df_true.head()
+```
+
+## Data Preparation
+
+Inserting column "class" to identify target features
+
+```{python}
+df_fake['class'] = 1
+df_true['class'] = 0
+```
+
+Merging df_true and df_fake
+
+```{python}
+df_merge = pd.concat([df_true, df_fake], axis = 0)
+df_merge.head() 
+```
+
+Let's determine the number of articles in the corpus.
+
+```{python}
+print('The number of articles in the corpus is: ', len(df_merge))
+```
+
+Combine title and text into one column for later analysis to consider both fields.
+
+```{python}
+df_merge['text'] = df_merge['title'] + df_merge['text']
+df_merge.head()
+```
+
+There are columns which we would not need for the purpose of this analysis: title, subject, and date. This can be dropped from the dataframe.
+
+```{python}
+df = df_merge.drop(["title", "subject", "date"], axis = 1)
+df.head()
+```
+
+The dataframe rows will be shuffled as during concatenation, the True and Fake classes retained their original location next to each other.
+
+```{python}
+df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+df.head()
+```
+
+We can check whether the number of entries in each class is relatively balanced. If they are not, imputation or under-sampling would have to be performed later during machine learning.
+
+```{python}
+sns.countplot(x="class",
+              data = df)
+plt.show()
+```
+
+It is possible to see that the number of entries in each class is relatively similar, eliminating the need for manipulation later on.
+
+## Text Pre-processing
+
+The text pre-processing steps used in this project are listed below:
+
+[Removal of words that appear only in “true” or “fake” news]{.underline}
+
+It can be observed from a visual check of both datasets that certain words and phrases only appear in either data set, while some words appear in both data sets. These words, as shown in the table below, are removed from the corpus as they do not contribute much to distinguish the documents. For example, hyperlink markers such as "www" appears in many articles and provides no value.
+
+[Tokenize words and change to lowercase]{.underline}
+
+Next, to standardize the words in the corpus, .lower() is used to change all word cases to lower case. Following which, the text is tokenized using NLTK’s word_tokenize() function. This will treat each word as a separate component.
+
+[Remove stop words]{.underline}
+
+Next, stop words are removed from the text. Stop words are words found in text there are deemed unlikely to be useful in information retrieval. Stop words can be understood as words necessary in the use of language but does not provide value for the analysis. Some common stop words are "the", "is", "are". The STOPWORDS library from Gensim is used for this project as it contains the highest number of stop words (337 stop words).
+
+[Stemming]{.underline}
+
+Next, stemming is applied on the remaining words to normalize text by obtaining only the stem of words. Stemming reduces the variations of a word down to single root. For example, "cats" would simply become "cat". This is done using the .stem() function from the PorterStemmer module under NLTK.
+
+[Remove punctuation]{.underline}
+
+Next, we remove all punctuation marks that are retained in the list of words after tokenization. This is achieved by using the .isalpha() function to retain only words that contain only alphabetic characters. Besides removing punctuation points, we can achieve a secondary advantage of removing numeric and special characters that may not contribute meaningfully to the analysis.
+
+[Refining pre-processing steps]{.underline}
+
+Finally, after an initial round of pre-processing, it was observed that the pre-processed text contained a high frequency of the following: words that are single characters, days of the week, and “says” or “said”. Days of the week and “says” or “said” are words commonly occurring in news articles. Hence, the pre-processing step is refined to include a custom list of stop words (each day of the week, “says”, “said”), and to only retain words that are longer than one character.
+
+The code chunk below will perform the described pre-processing steps.
+
+```{python}
+
+## A function is defined to perform pre-processing steps for easier usage later on
+
+custom_stop_word = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'said', 'says', 's', 't']
+stop_words = STOPWORDS.union(set(custom_stop_word)) # setting the stopwords
+stemmer = PorterStemmer() # setting the stemmer
+
+def preprocess_tokens(text):
+    words = re.sub('Reuters', '', text) # removing the word Reuters as it appears in all the real news
+    words = re.sub('https?:\S+|www\.\S+', ' ', words) # remove URLs that begin with 'https' or 'www'
+    words = re.sub('bit\.ly\S+', ' ', words) # remove URLS that begin with 'bit.ly' - only appears in true news
+    words = re.sub('pic\.twitter\.com\S+', ' ', words) # remove URLs that begin with 'pic.twitter.com' - only appears in fake news
+    words = word_tokenize(words.lower())  # convert text to lowercase & split into word tokens
+    words = [word for word in words if not word in stop_words] # removing the stop words
+    words = [stemmer.stem(word) for word in words] # stemming the words
+    words = [word for word in words if word.isalpha()] # removing punctuation
+    words = [word for word in words if len(word) > 1] # remove single character words
+    return words
+```
+
+The preprrocess_token() function can now be applied onto the text column of our dataframe.
+
+```{python}
+df['text_preprocessed'] = df["text"].apply(preprocess_tokens)
+df.head()
+```
+
+Let's determine the distribution of lengths of each token using a plot.
+
+```{python}
+# Find the length of each list of preprocessed tokens
+lengths = [len(tokens) for tokens in df['text_preprocessed']]
+
+# Plot the distribution of the length of the list of preprocessed tokens
+plt.figure(figsize=(8, 6))
+sns.histplot(lengths, bins=30, color='skyblue', edgecolor='black', kde=False)
+plt.title('Distribution of the Length of Preprocessed Tokens')
+plt.xlabel('Length of Preprocessed Tokens')
+plt.ylabel('Frequency')
+plt.show()
+```
+
+Alternatively, it is also possible to determine the top 20 most common tokens in the entire corpus. Due to the large number of articles in the corpus, we can sample just the first 1,000 articles in order to get a glimpse of the top 20 most common tokens.
+
+```{python}
+first1000 = list(itertools.chain.from_iterable(df['text_preprocessed'][:1000]))
+print('most frequent tokens in first 100 doc \n', nltk.FreqDist(first1000).most_common(20))
 ```

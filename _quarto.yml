@@ -9,13 +9,13 @@ website:
         menu: 
           - text: Local Indicators of Spatial Association (LISA)
             href: Personal_Proj/LISA/Take-Home_Ex1.html
-          - text: Fake News Detection
+          - text: Untangling Fact from Falsehood Using NLP
             href: Personal_Proj/Fake_News_Detection/fake_news.html
     right:
       - href: index.html
         text: Home
       - href: about.html
-        text: About
+        text: Contact
 
 format:
   html:
