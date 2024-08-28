@@ -12,6 +12,8 @@ editor: visual
 
 This project was done as part of ISSS609: Text Analytics and Applications. The analysis was performed jointly with Chock Wan Kee, Denise Tan Shi Min, Lim Li Ying, Noel Ng Ser Ying, and Tan Yanni Regine.
 
+Main language/tool: Python
+
 ## Introduction
 
 The proliferation of fake news is a growing global concern, impacting public opinion, political processes, and trust in media institutions. Fake news is defined as fabricated information that mimics news media content in form but not in organizational process or intent (Lazer, et al., 2018). The spread of misinformation poses significant challenges to foster an informed citizenry as it makes people more susceptible to political misinterpretations (Guess, et al., 2020), thereby increasing the challenge of upholding credibility and integrity of information sources.
@@ -63,6 +65,7 @@ import re
 import warnings
 import datetime
 import itertools
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from sklearn import svm
 from sklearn.model_selection import train_test_split, cross_validate, StratifiedKFold
@@ -294,7 +297,7 @@ def dummy(tokens):
 vectorizer = TfidfVectorizer(tokenizer=dummy, 
                              preprocessor=dummy,
                              token_pattern=None, 
-                             ngram_range = (1,2), 
+                             ngram_range = (1,1), 
                              min_df = 0.1)
                              
 X_train = vectorizer.fit_transform(X_train)
@@ -379,3 +382,175 @@ model_evaluate(models,'LogReg')
 ```
 
 Based on the evaluation of the three models, the XGBoost model can be considered to be the most effective as it achieved the highest F1-score and the highest accuracy of 96%. In order to improve the rigor of our machine learning, K-fold Cross Validation can be performed to further evaluate each of the model.
+
+### K-fold Cross Validation Method
+
+It is possible to tweak our functions to perform StratifiedKFold validation instead of a simple train-test split.
+
+```{python}
+scoring = {'accuracy' : make_scorer(accuracy_score), 
+           'precision' : make_scorer(precision_score),
+           'recall' : make_scorer(recall_score), 
+           'f1_score' : make_scorer(f1_score)}
+           
+def model_evaluate_kfold(models, model_name):
+    pipeline = Pipeline(steps=[
+        ('vectorizer', TfidfVectorizer(tokenizer=dummy, preprocessor=dummy, token_pattern=None, ngram_range=(1, 1), min_df=0.1)),
+        ('model', models[model_name])
+    ])
+
+    # Use stratified k-fold cross-validation
+    cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+    # Perform cross-validation
+    scores = cross_validate(pipeline, X, y, cv=cv, scoring=scoring)
+
+    print(f"Cross-validation scores for {model_name}:")
+    print(f"Accuracy: {scores['test_accuracy']}")
+    print(f"Precision: {scores['test_precision'].mean()}")
+    print(f"Recall: {scores['test_recall'].mean()}")
+    print(f"F1-score: {scores['test_f1_score'].mean()}")
+    print(f"Mean accuracy: {scores['test_accuracy'].mean()}")
+    print(f"Standard deviation: {scores['test_accuracy'].std()}")
+
+```
+
+Now, it is possible to evaluate our models, starting with XGBoost. Due to the nature of k-fold validation, the process would take longer than simple train-test evaluation:
+
+```{python}
+model_evaluate_kfold(models,'XGBoost')
+```
+
+It is possible to see that the Accuracy and F1-score improved by almost one percentage point when k-fold validation is performed instead of a simple train-test training.
+
+Let's continue to evaluate the SVM and Logistic Regression models.
+
+```{python}
+model_evaluate_kfold(models,'SVM')
+```
+
+```{python}
+model_evaluate_kfold(models,'LogReg')
+```
+
+It is possible to detect a slight increase in each evaluation metric for the three models. Moving forward, it can be determined that XGBoost and k-fold cross validation can be used for further experimentation.
+
+Following the determination of a model and evaluation method, Sentiment Analysis can be performed in order to understand the sentiments of fake news versus real news and to potentially create new features for fake news detection with machine learning.
+
+## Sentiment Analysis
+
+Sentiment analysis, or opinion mining, aims to identify the emotional pattern within written text. By conducting sentiment analysis, the sentiment, attitudes, and emotions expressed by a piece of text can be determined (Liu, 2020). Such analysis is particularly relevant to the fake news detection as targeting emotions and provoking an emotional response are the main vectors of effectiveness and spread for fraudulent information (Bakir & McStay, 2018; Horner, et al., 2021). In addition, due to the prominent role that sentiments play in fake news, multiple studies have found that by including sentiment analysis, the performance of a fake news classifier can be improved (Ajao et al., 2019; Alonso et al., 2021; Zhang et al., 2021).
+
+In this project, the goal of sentiment analysis is two-fold. First, sentiment analysis is an objective in and of itself, allowing the study to capture any emotional disparity between fake and genuine news and describe the usage of emotions in fake news. Second, the results of sentiment analysis can serve as new features for document classification, potentially improving its performance. We utilized two of the most popular Python packages, NLTK and TextBlob. However, it is important to note that a clear drawback of any sentiment analysis task based on existing dictionaries will be that the context of the dictionary might not match with the context of the current corpus.
+
+For the purpose of this project, sentiment analysis will be performed using two libraries, NLTK's VADER and TextBlob.
+
+### VADER
+
+NLTK is a powerful tool for natural language processing, including classifiers and sentiment lexicons for sentiment analysis. It works with many text analytics tasks, provides users with a pretrained lexicon and rule-based sentiment analyzer called Valence Aware Dictionary and sEntiment Reasoner (VADER) (Mogyorosi, n.d.). The VADER analyzer uses the vader_lexicon developed by C.J. Hutto and Eric Gilbert, which measures a sentiment intensity score from words, phrases and emojis, and based on their emotional content, from negative to positive. This vader_lexicon can be applied to a piece of written text using NLTK’s SentimentIntensityAnalyzer’s polarity_score() function. SentimentIntensityAnalyzer can be applied to whole sentences instead of tokenized text. However, we note that VADER was trained specifically for social media data to handle complex language sentiments, which may not be completely applicable to fake news.
+
+As the VADER lexicon can be applied directly to text using the SentimentIntensityAnalyzer(), polarity scores for each document in the corpus can be generated by applying .polarity_score() on each record of the processed text dataframe, df. Four score types can be generated from .polarity_score(), and we store each score in one newly created column in df:
+
+-   Compound: overall sentiment score between -1 to 1
+
+-   Negative: negative sentiment score between 0 to 1
+
+-   Neutral: neutral sentiment score between 0 to 1
+
+-   Positive: positive sentiment score between 0 to 1
+
+The compound score is used as a feature in the classification model as it represents the overall sentiment of each document. The compound score is the sum of the valence scores of each word in the lexicon, normalized to be between -1 and +1 (Swarnkar, 2020).
+
+First, we load the SentimentIntensityAnalyzer into a variable.
+
+```{python}
+sen_ana = SentimentIntensityAnalyzer()
+```
+
+Let's test how the results of the analyzer are displayed.
+
+```{python}
+print(sen_ana.polarity_scores('I love quiz'))
+print(sen_ana.polarity_scores('I hate quiz'))
+```
+
+We can see that the first statement is rated to be very positive while the second statement is considered very negative, which makes sense with a cursory inspection.
+
+Instead of having all four scores combined as above, it would be easier for analysis if they're stored in separate columns. To do so, we can assign each of the score to a new column in the data frame.
+
+```{python}
+df['nltk_compound']  = df['text'].apply(lambda x: sen_ana.polarity_scores(x)['compound'])
+df['nltk_neg'] = df['text'].apply(lambda x: sen_ana.polarity_scores(x)['neg'])
+df['nltk_neu'] = df['text'].apply(lambda x: sen_ana.polarity_scores(x)['neu'])
+df['nltk_pos'] = df['text'].apply(lambda x: sen_ana.polarity_scores(x)['pos'])
+```
+
+It is now possible to see the average sentiment scores by class of articles.
+
+```{python}
+df.groupby('class')[['nltk_neg','nltk_neu','nltk_pos','nltk_compound']].mean()
+```
+
+It can be observed that the sentiment differences between the two classes of fake and true news are not significantly divergent based on their mean scores. A visualization might help to further elucidate any potential differences.
+
+```{python}
+fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+sns.histplot(df, x="nltk_neg", hue="class", stat="count",ax=axs[0, 0])
+sns.histplot(df, x="nltk_neu", hue="class", stat="count",ax=axs[0, 1])
+sns.histplot(df, x="nltk_pos", hue="class", stat="count",ax=axs[1, 0])
+sns.histplot(df, x="nltk_compound", hue="class", stat="count",ax=axs[1, 1])
+plt.tight_layout()
+plt.show()
+```
+
+### TextBlob
+
+TextBlob is a user-friendly library built on NLTK library, allowing users to easily analyze a text corpus. It is more oriented towards user reviews and based on the “pattern” library, which contains high frequency adjectives in reviews. In addition to a customizable library of adjectives, TextBlob also provides a library created through machine learning, namely a Naïve Bayes Classifier model to classify text as positive, negative, or neutral. This library applied a machine-learning model on a corpus of movie reviews and score rating to derive the ratings of words (Loria, 2020).
+
+The TextBlob().sentiment function is applied directly to each record of the processed text dataframe, df. Two score types are generated from this function, and each is stored in one newly created column in df:
+
+-   Polarity: measures negative or positive sentiment between -1 and 1, with -1 defined as a negative sentiment and 1 defined as a positive sentiment.
+
+-   Subjectivity: quantifies the amount of personal opinion and factual information contained in the text between 0 and 1. Higher subjectivity means that the text contains personal opinion than facts
+
+Let's see a demonstration of TextBlob in Python.
+
+```{python}
+texts = ['I love quiz', 'I hate quiz']
+
+# Create TextBlob objects with the text
+# Analyze sentiments and print
+for text in texts:
+    sentiment = TextBlob(text).sentiment
+    print(f"Sentiment for '{text}': {sentiment}")
+```
+
+Similar to VADER, TextBlob identified the first statement as having a positive polarity score while the second as having a negative polarity score. It is important to note that even though a cursory examination shows both statements to be equally subjective, TextBlob indicates that one is more subjective than the other.
+
+TextBlob can be applied to our corpus and the resulting scores can be stored in their own respective columns.
+
+```{python}
+df['textblob_sentiment'] = df['text'].apply(lambda x: TextBlob(x).sentiment)
+```
+
+```{python}
+df['textblob_polarity'] = df['textblob_sentiment'].apply(lambda x: x.polarity)
+df['textblob_subjectivity'] = df['textblob_sentiment'].apply(lambda x: x.subjectivity)
+```
+
+Next, the mean polarity and subjectivity scores from TextBlob can be calculated.
+
+```{python}
+sentiment_means = df.groupby('class')[['textblob_polarity', 'textblob_subjectivity']].mean()
+print(sentiment_means)
+```
+
+Once again, the difference between the Fake and True news classes do not seem to be significant. It might be useful to visualize the distribution of scores in order to confirm this observation.
+
+```{python}
+fig, axs = plt.subplots(1, 2, figsize=(12, 8))
+sns.histplot(df, x="textblob_polarity", hue="class", stat="count", ax = axs[0])
+sns.histplot(df, x="textblob_subjectivity", hue="class", stat="count", ax = axs[1])
+plt.tight_layout()
+plt.show()
+```

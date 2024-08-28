@@ -2,7 +2,7 @@ project:
   type: website
 
 website:
-  title: "Personal Projects"
+  title: "Phan Hoang Long's Personal Site"
   navbar:
     left:
       - text: Personal Projects

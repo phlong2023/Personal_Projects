@@ -1,5 +1,5 @@
 ---
-title: "Local Indicators of Spatial Association (LISA)"
+title: "Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore"
 date: '24 November 2023'
 date-modified: 'last-modified'
 format: html
@@ -10,7 +10,7 @@ execute:
 editor: visual
 ---
 
-# Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore
+Main tool/language: R
 
 ## Objectives
 
