@@ -1,6 +1,5 @@
 ---
 title: "Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore"
-date: '24 November 2023'
 date-modified: 'last-modified'
 format: html
 execute: 

@@ -5,9 +5,9 @@ website:
   title: "Phan Hoang Long's Personal Site"
   navbar:
     left:
-      - text: Personal Projects
+      - text: Data Analytics Projects
         menu: 
-          - text: Local Indicators of Spatial Association (LISA)
+          - text: Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore
             href: Personal_Proj/LISA/Take-Home_Ex1.html
           - text: Untangling Fact from Falsehood Using NLP
             href: Personal_Proj/Fake_News_Detection/fake_news.html

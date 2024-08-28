@@ -1,6 +1,5 @@
 ---
 title: "Untangling Fact from Falsehood Using NLP"
-date: '26 August 2024'
 date-modified: 'last-modified'
 format: html
 execute: 
@@ -18,7 +17,7 @@ Main language/tool: Python
 
 The proliferation of fake news is a growing global concern, impacting public opinion, political processes, and trust in media institutions. Fake news is defined as fabricated information that mimics news media content in form but not in organizational process or intent (Lazer, et al., 2018). The spread of misinformation poses significant challenges to foster an informed citizenry as it makes people more susceptible to political misinterpretations (Guess, et al., 2020), thereby increasing the challenge of upholding credibility and integrity of information sources.
 
-Many experiments have been designed and conducted to put Machine Learning techniques to the test in detecting fake from true news. Our project seeks to determine if detection accuracy can be improved with additional features from sentiment analysis and topic modelling.  Sentiment analysis discerns the emotional tone of text, thereby providing insights to how information is framed and its potential impact on readers. Topic modelling identifies topics according to words that co-occur frequently to assess prevalent topics present in fake news.
+Many experiments have been designed and conducted to put Machine Learning techniques to the test in detecting fake from true news. Our project seeks to determine if detection accuracy can be improved with additional features from sentiment analysis.  Sentiment analysis discerns the emotional tone of text, thereby providing insights to how information is framed and its potential impact on readers.
 
 The dataset used in this project is the “[Fake News Detection](https://www.kaggle.com/code/therealsampat/fake-news-detection/input?select=True.csv)” dataset from Kaggle. It contains fake and real news from 31 May 2015 to 19 Feb 2018. The two classes of data are separated into the respective “Fake” and “True” files, which will be combined for our analysis.
 
@@ -26,13 +25,13 @@ The dataset used in this project is the “[Fake News Detection](https://www.kag
 
 We adopted a sequential approach to the analysis that is summarized in the flow chart below:
 
-![](images/clipboard-3748887779.png)
+![](images/clipboard-418630220.png)
 
 Firstly, the separate “Fake” and “True” files had to be merged into one for analysis. To differentiate between the fake and real news after merging for classification, labels were assigned to each record from the same file, 0 for real news and 1 for fake news. After merging both files, the title and text columns are concatenated to create a corpus for text preprocessing.
 
 Next, preprocessing steps involving tokenization, stop word removal, and stemming are applied on the corpus. It was discovered that some words, such as days of the week and “say” or “said”, appeared in high frequency and did not help to distinguish one document from another. It is reasonable that these words appear frequently in news reports as they provide details on incidents which often include reported speech. In view of the above, we included these words as stop words to be removed from the corpus.
 
-While some experiments have shown that sentiment analysis is useful in different systems and tools used for detecting fake news, few experiments included the use of topic modelling to train the classification model. In our methodology, the sentiment analysis scores, and most dominant topics are included as features to train and test the classification algorithm.
+After identifying the best model, additional features such as sentiment analysis scores (including compound score from NLTK’s VADER and subjectivity and polarity scores from TextBlob) were incorporated into the model to evaluate their impact on enhancing the model’s performance. This is due to the fact that sentiment analysis has been shown to be a potentially powerful tool in identifying fake news, as will be elaborated later in the article.
 
 One challenge is the size of the corpus containing more than 40,000 documents. Choosing a model that can work efficiently with this corpus size will be a crucial factor.
 
@@ -245,7 +244,7 @@ We can see that topics related to United States (U.S) politics dominate the top 
 
 ## Document Classification - Baseline
 
-As the project aims to understand the impact of using sentiment analysis and topic modelling to improve the accuracy of fake news classification using machine learning techniques, a baseline classification model is trained using only the processed data that excludes additional features.
+As the project aims to understand the impact of using sentiment analysis to improve the accuracy of fake news classification using machine learning techniques, a baseline classification model is trained using only the processed data that excludes additional features.
 
 Two model evaluation methods are explored in this project. The Train-Test Split Method is used and validated using the evaluation metrics, the K-Fold Cross Validation Method is used. As mentioned in the previous section, three classification models are employed in this project: XGBoost, SVM, and Logistic Regression.
 
@@ -259,15 +258,13 @@ Using the train-test split method alone may introduce bias that is an over- or u
 
 To achieve this, we wrote another function to evaluate each model using the k-fold evaluation method, where k = 10 in this project. This is implemented using the StratifiedKFold function from sklearn. This function splits the entire vectorized data set into 10 equal-sized parts with approximately similar proportions of class 0 and class 1 data. Next, we evaluated each model 10 times, each time using one fold as the validation set, and the average of the performance over 10 rounds of training and validation is used as the overall performance metric. This is achieved using the cross_validate() function from sklearn, and the precision, recall, f1-score, and support scores are created using the make_scorer() function from sklearn.
 
-After obtaining the results of the baseline model, the data frame is fitted with features from the subsequent analyses – sentiment analysis using VADER and TextBlob, and topic modelling. The train-test split method and k-fold cross-validation are applied to the corpus with the addition of the following features:
+After obtaining the results of the baseline model, the data frame is fitted with features from the subsequent analyses – sentiment analysis using VADER and TextBlob. The train-test split method and k-fold cross-validation are applied to the corpus with the addition of the following features:
 
 -   Compound score from VADER
 
 -   Polarity and Subjectivity scores from TextBlob
 
 -   Compound score from VADER, and Polarity and Subjectivity scores from TextBlob
-
--   Polarity and Subjectivity scores from TextBlob, and most dominant topic from LDA
 
 But first, let's consider the performance of a simple baseline solution without any additional features. This can be performed using the code chunks below.
 
@@ -404,7 +401,6 @@ def model_evaluate_kfold(models, model_name):
 
     # Perform cross-validation
     scores = cross_validate(pipeline, X, y, cv=cv, scoring=scoring)
-
     print(f"Cross-validation scores for {model_name}:")
     print(f"Accuracy: {scores['test_accuracy']}")
     print(f"Precision: {scores['test_precision'].mean()}")
@@ -433,7 +429,22 @@ model_evaluate_kfold(models,'SVM')
 model_evaluate_kfold(models,'LogReg')
 ```
 
-It is possible to detect a slight increase in each evaluation metric for the three models. Moving forward, it can be determined that XGBoost and k-fold cross validation can be used for further experimentation.
+It is possible to detect a slight increase in each evaluation metric for the three models. Moving forward, it can be determined that XGBoost and k-fold cross validation can be used for further experimentation. The baseline results using XGBoost can be stored for later comparison.
+
+```{python}
+
+pipeline = Pipeline(steps=[
+    ('vectorizer', TfidfVectorizer(tokenizer=dummy, preprocessor=dummy, token_pattern=None, ngram_range=(1, 1), min_df=0.1)),
+    ('model', models['XGBoost'])
+])
+
+# Use stratified k-fold cross-validation
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+# Perform cross-validation
+scores = cross_validate(pipeline, X, y, cv=cv, scoring=scoring)
+scores_baseline = [scores['test_f1_score'].mean(), scores['test_accuracy'].mean()]
+```
 
 Following the determination of a model and evaluation method, Sentiment Analysis can be performed in order to understand the sentiments of fake news versus real news and to potentially create new features for fake news detection with machine learning.
 
@@ -554,3 +565,231 @@ sns.histplot(df, x="textblob_subjectivity", hue="class", stat="count", ax = axs[
 plt.tight_layout()
 plt.show()
 ```
+
+Let's combine all the scores into one table for easier comparison.
+
+```{python}
+nltk_sentiment = df.groupby('class')[['nltk_neg','nltk_neu','nltk_pos','nltk_compound']].mean()
+textblob_sentiment = df.groupby('class')[['textblob_polarity', 'textblob_subjectivity']].mean()
+summary_table = pd.concat([nltk_sentiment,textblob_sentiment],axis = 1)
+summary_table.index = ['True','Fake']
+pd.set_option('display.max_columns', 7)
+summary_table
+```
+
+It can be seen that Fake News have an NLTK Negative mean score closer to –1 (0.101657), indicating that Fake News articles contain more words linked to negative emotions than real true news. However, if TextBlob scores are considered, the Polarity score for True News is slightly smaller, indicating that True News is more negative. Yet, these scores are so similar that it might not indicate a meaningful difference. At the same time, it is possible that Fake News, in general, contain more emotions, either negative or positive, compared to True News. This is reflected in Fake News higher score for NLTK Positive Sentiment (0.092697) compared to True News (0.081833). By encompassing both more negative and positive emotions, the mean TextBlob Polarity score for Fake News can be normalized.
+
+On the other hand, the Subjectivity scores exhibit a larger difference between Fake (0.452103) and True News (0.3607), reflecting the potential for Fake News to contain more opinions than facts compared to True News. Histograms visualizing the distribution difference between True and Fake news can be referenced in the Appendix.
+
+Because a difference seems to exist between True News and Fake News for different sentiment categories, the idea that sentiment scores can be added as a feature for the classification task is further reinforced.
+
+In the following section, the document classification model using XGBoost and k-fold cross validation will be refitted to a set of features including the vectorized text of the corpus as well as the compound sentiment scores from NLTK (Compound Score) and TextBlob (Polarity Score) and subjectivity score from TextBlob (Subjectivity Score). Each of these feature will be added sequentially, then combined together to discern their effect on model performance.
+
+## Document Classification with Sentiment Analysis
+
+### Document Classification with Sentiment Analysis (NLTK VADER)
+
+Firstly, we can perform document classification using NLTK's compound score with XGBoost and k-fold cross validation.
+
+Only one step is added to the process, which is to use hstack from numpy in order to stack the features column wise after vectorization of text features.
+
+```{python}
+# Define the dependent and independent variables
+x = df['text_preprocessed']
+x_sentiment_compound = df['nltk_compound'].values.reshape(-1,1)
+y = df['class']
+```
+
+```{python}
+# Create features with compound sentiment score
+def dummy(tokens):
+    return tokens
+
+vectorizer = TfidfVectorizer(tokenizer=dummy, 
+                             preprocessor=dummy, 
+                             token_pattern=None, 
+                             ngram_range=(1, 2), 
+                             min_df=0.1)
+                             
+x_feature = vectorizer.fit_transform(x)
+x_compound = hstack((x_feature,x_sentiment_compound))
+```
+
+```{python}
+scoring = {'accuracy' : make_scorer(accuracy_score), 
+           'precision' : make_scorer(precision_score),
+           'recall' : make_scorer(recall_score), 
+           'f1_score' : make_scorer(f1_score)}
+
+model = xgb.XGBClassifier()
+
+# Use stratified k-fold cross-validation
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+# Perform cross-validation
+scores = cross_validate(model, x_compound, y, cv=cv, scoring=scoring)
+
+scores_nltk = [scores['test_f1_score'].mean(),scores['test_accuracy'].mean()]
+
+print(f"Cross-validation scores for XGBoost:")
+print(f"Accuracy: {scores['test_accuracy']}")
+print(f"Precision: {scores['test_precision'].mean()}")
+print(f"Recall: {scores['test_recall'].mean()}")
+print(f"F1-score: {scores['test_f1_score'].mean()}")
+print(f"Mean accuracy: {scores['test_accuracy'].mean()}")
+print(f"Standard deviation: {scores['test_accuracy'].std()}")
+```
+
+It can be observed that the F1 score and mean accuracy both demonstrate a marginal increase of around 0.01%, showing that adding features related to sentiment analysis could possibly make a difference. The next section will explore the use of TextBlob's sentiment and subjectivity scores as features and the combined sets of NLTK and TextBlob features.
+
+### Document Classification with Sentiment Analysis (TextBlob)
+
+```{python}
+# Define the dependent and independent variables
+x = df['text_preprocessed']
+x_sentiment_polarity = df['textblob_polarity'].values.reshape(-1,1)
+x_sentiment_subjectivity = df['textblob_subjectivity'].values.reshape(-1,1)
+y = df['class']
+```
+
+```{python}
+# Create features with polarity and subjectivity sentiment score
+def dummy(tokens):
+    return tokens
+vectorizer = TfidfVectorizer(tokenizer=dummy, preprocessor=dummy, token_pattern=None, ngram_range=(1, 2), min_df=0.1)
+x_feature = vectorizer.fit_transform(x)
+x_pol_sub = hstack((x_feature, x_sentiment_polarity, x_sentiment_subjectivity))
+```
+
+```{python}
+scoring = {'accuracy' : make_scorer(accuracy_score), 
+           'precision' : make_scorer(precision_score),
+           'recall' : make_scorer(recall_score), 
+           'f1_score' : make_scorer(f1_score)}
+
+model = xgb.XGBClassifier()
+
+# Use stratified k-fold cross-validation
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+# Perform cross-validation
+scores = cross_validate(model, x_pol_sub, y, cv=cv, scoring=scoring)
+
+scores_textblob = [scores['test_f1_score'].mean(),scores['test_accuracy'].mean()]
+
+print(f"Cross-validation scores for XGBoost:")
+print(f"Accuracy: {scores['test_accuracy']}")
+print(f"Precision: {scores['test_precision'].mean()}")
+print(f"Recall: {scores['test_recall'].mean()}")
+print(f"F1-score: {scores['test_f1_score'].mean()}")
+print(f"Mean accuracy: {scores['test_accuracy'].mean()}")
+print(f"Standard deviation: {scores['test_accuracy'].std()}")
+
+```
+
+### Document Classification with Sentiment Analysis (NLTK VADER and TextBlob)
+
+```{python}
+# Define the dependent and independent variables
+x = df['text_preprocessed']
+x_sentiment_compound = df['nltk_compound'].values.reshape(-1,1)
+x_sentiment_polarity = df['textblob_polarity'].values.reshape(-1,1)
+x_sentiment_subjectivity = df['textblob_subjectivity'].values.reshape(-1,1)
+y = df['class']
+```
+
+```{python}
+# Create features with compound, polarity, subjecctivity scores
+def dummy(tokens):
+    return tokens
+vectorizer = TfidfVectorizer(tokenizer=dummy, preprocessor=dummy, token_pattern=None, ngram_range=(1, 2), min_df=0.1)
+x_feature = vectorizer.fit_transform(x)
+x_combined = hstack((x_feature, x_sentiment_compound, x_sentiment_polarity, x_sentiment_subjectivity))
+```
+
+```{python}
+scoring = {'accuracy' : make_scorer(accuracy_score), 
+           'precision' : make_scorer(precision_score),
+           'recall' : make_scorer(recall_score), 
+           'f1_score' : make_scorer(f1_score)}
+
+model = xgb.XGBClassifier()
+
+# Use stratified k-fold cross-validation
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+# Perform cross-validation
+scores = cross_validate(model, x_combined, y, cv=cv, scoring=scoring)
+
+scores_nltk_textblob = [scores['test_f1_score'].mean(),scores['test_accuracy'].mean()]
+
+print(f"Cross-validation scores for XGBoost:")
+print(f"Accuracy: {scores['test_accuracy']}")
+print(f"Precision: {scores['test_precision'].mean()}")
+print(f"Recall: {scores['test_recall'].mean()}")
+print(f"F1-score: {scores['test_f1_score'].mean()}")
+print(f"Mean accuracy: {scores['test_accuracy'].mean()}")
+print(f"Standard deviation: {scores['test_accuracy'].std()}")
+```
+
+```{python}
+pd.DataFrame([scores_baseline, scores_nltk,scores_textblob,scores_nltk_textblob], columns = ['F1-score','Accuracy'], index = ['Baseline XGBoost','NLTK VADER','TextBlob','Combined'])
+```
+
+All three models that incorporated sentiment analysis scores (NLTK VADER, TextBlob, and Combined) showed an improvement in model performance compared to the baseline XGBoost model. These findings correlate with the studies cited that sentiment analysis may be a useful feature for enhancing model performance.
+
+## Discussions and Gap Analysis
+
+### **Inclusion of Sentiment Analysis in Document Classification**
+
+The results of document classification using the results of sentiment analysis as additional features exhibit improvements over base classification models using only text as features. This shows that the consideration of sentiment analysis could be a fruitful endeavor in the identification of fake news. Additionally, it reinforces the idea that fake news tends to have more emotion expressors than regular news to incite an emotional response from readers. What is lacking, however, is a word-sentiment dictionary which might be more appropriate to the context of news articles. Such a dictionary might further improve the results of the classifications by allowing for better calculation of sentiment scores.
+
+### **Named Entities**
+
+In news articles, it is very common for named entities to be used that might not be recognized in dictionaries, and with the lack of recognition, also comes the lack of context surrounding the entities. If the model can recognize these entities, this would then further enhance how it differentiates real news from fake news as there is additional information for the model to consider.
+
+### **Data Source**
+
+The Kaggle dataset that was used seems to likely be from the United States. Most of the fake news were related to America’s politics and thus the model has been tuned to pick up keywords along this theme. This means that if we were to apply this model to datasets from around the world, the model might not be as applicable or accurate anymore as the topics identified will likely not be as relevant. For example, news about Trump’s inauguration might not be as big in Singapore, and thus if the model was used as-is to run on Singapore’s news, the results produced would thereby not be as accurate.
+
+### **Technical Limitations**
+
+As we were dealing with a large dataset and performing complex NLP tasks, we faced constraints such as computational resources and processing speed issues. Running the code sometimes took more than an hour, due to the nature of the computations that we were running. This was quite inefficient, as we needed to test multiple models and had several revisions of code, resulting in us having to spend time allowing the code to load.
+
+### **Dynamic Nature of Fake News**
+
+As technology evolves, so do the methods of dissemination of fake news. With ever-changing tactics to deceive the masses, static models that are not continually updated will not be able to adapt to any emerging trends. As such, if the model is not regularly refreshed, it will sooner or later become obsolete and inaccurate.
+
+## Future Work and Conclusion
+
+### **Named Entity Recognition (NER)**
+
+Named Entity Recognition (NER) can extract important entities mentioned in news articles, such as the names of politicians, organizations, or locations. By analyzing the entities mentioned in both fake and real news, patterns may emerge that could indicate the credibility or authenticity of the article. Additionally, by analyzing the context surrounding named entities, NER can help detect instances of misinformation or propaganda. For example, if a fake news article mentions a well-known organization or individual in a misleading context, NER can help identify the discrepancy between the entity's actual role or stance and how it is portrayed in the article.
+
+### **Extension of Data Source Scope** 
+
+To tackle the second issue, a future extension of this project would then be to re-train the model based on local news. This would then help to include more local topics on top of the American news (as Singapore is so interlinked to the rest of the world, American news would not be completely irrelevant, so keeping this would not be completely useless). The accuracy and precision of the model would then be improved, and thereby we will be able to use this model for local news as well.
+
+### **Regular Updating of Dataset**
+
+Our model will need to be updated regularly with more recent articles to ensure that it can continue to stay relevant and continue to identify fake news accurately, even those disseminated with new methods of trickery.
+
+## **References**
+
+Ajao, O., Bhowmik, D., & Zargari, S. (2019). Sentiment Aware Fake News Detection on Online Social Networks. *ICASSP 2019 - 2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)*, 2507–2511. <https://doi.org/10.1109/ICASSP.2019.8683170>
+
+Bakir, V., & McStay, A. (2018). Fake News and The Economy of Emotions. *Digital Journalism*, 6:2, 154-175. doi:https://doi.org/10.1080/21670811.2017.1345645
+
+Guess, A., Lockett, L., Benjamin, L., Montgomery, J., Nyhan, B., & Reifler, J. (2020). “Fake news” may have limited effects on political participation beyond increasing beliefs in false claims. *Harvard Kennedy School (HKS) Misinformation Review*. doi:https://doi.org/10.37016/mr-2020-004
+
+Horner, C., Galletta, D., Crawford, J., & Shirsat, A. (2021). Emotions: The Unexplored Fuel of Fake News on Social Media. *Journal of Management Information Systems*, 38:4, 1039-1066. doi:https://doi.org/10.1080/07421222.2021.1990610
+
+Kohavi, R. (1995). A Study of Cross-Validation and Bootstrap for Accuracy Estimation and Model Selection. *International Joint Conference on Arti*, Vol. 14, pp. 1137–1145. doi:http://frostiebek.free.fr/docs/Machine%20Learning/validation-1.pdf
+
+Lazer, D. M., Baum, M., Benkler, Y., Berinsky, A., Greenhill, K., Menczer, F., . . . Zittrain, J. (2018). The science of fake news. *Science359*, 1094-1096. doi:https://doi.org/10.1126/science.aao2998
+
+Liu, B. (2020). Introduction. In B. Liu, *Sentiment Analysis Mining Opinions, Sentiments, and Emotions* (pp. 1-17). Cambridge University Press. doi:https://doi.org/10.1017/9781108639286.002
+
+Swarnkar, N. (2020, May 21). *VADER Sentiment Analysis: A Complete Guide, Algo Trading and More*. Retrieved from QuantInsti: https://blog.quantinsti.com/vader-sentiment/
+
+Zhang, X., Cao, J., Li, X., Sheng, Q., Zhong, L., & Shu, K. (2021). Mining Dual Emotion for Fake News Detection. *Proceedings of the Web Conference 2021*, 3465–3476. <https://doi.org/10.1145/3442381.3450004>

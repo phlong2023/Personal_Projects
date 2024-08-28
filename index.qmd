@@ -3,11 +3,10 @@ title: "Projects Showcase"
 date-modified: 'last-modified'
 format: html
 editor: visual
-theme: cerulean
 ---
 
-Hi, my name is Phan Hoang Long and I am a graduate student in the Master of IT in Business (Analytics) program at Singapore Management University (SMU).
+Hi, my name is Phan Hoang Long and I am a graduate student in the Master of IT in Business (Analytics) program at Singapore Management University (SMU). I am an aspiring data analyst with experience in performing analysis in Python, R, and the SAS Viya family of tools. In addition to my academic training in data analytics, I am also trained in Political Science and Public Policy, allowing me to consider problems from both a quantitative and qualitative perspective.
 
-Over the past year, I have been introduced to a variety of domains in data analytics, from standard business statistical analytics, to textual and geospatial analytics. This website is an attempt to compile some of my projects to document my own learning, and to serve as a show case of what I have done and what I can do.
+Over the past year, I have been introduced to a variety of domains in data analytics, from standard business statistical analytics, to textual and geospatial analytics. This website is an attempt to compile some of my individual and group projects to document my own learning, and to serve as a showcase of what I have done and what I can do.
 
 This is just a small display of what I have learned, but my goal is not to demonstrate that I am fully an expert, but rather than I am always willing to learn and expand my fields of knowledge and capability. My learning will never stop, and I hope to be updating this website as my capacity grows going forward.

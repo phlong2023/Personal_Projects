@@ -6,9 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2024-08-26">
 
-<title>Phan Hoang Long’s Personal Site - Untangling Fact from Falsehood Using NLP</title>
+<title>Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore - Untangling Fact from Falsehood Using NLP</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -110,7 +109,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container">
     <a class="navbar-brand" href="../../index.html">
-    <span class="navbar-title">Phan Hoang Long’s Personal Site</span>
+    <span class="navbar-title">Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore</span>
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -180,6 +179,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#vader" id="toc-vader" class="nav-link" data-scroll-target="#vader">VADER</a></li>
   <li><a href="#textblob" id="toc-textblob" class="nav-link" data-scroll-target="#textblob">TextBlob</a></li>
   </ul></li>
+  <li><a href="#document-classification-with-sentiment-analysis" id="toc-document-classification-with-sentiment-analysis" class="nav-link" data-scroll-target="#document-classification-with-sentiment-analysis">Document Classification with Sentiment Analysis</a>
+  <ul class="collapse">
+  <li><a href="#document-classification-with-sentiment-analysis-nltk-vader" id="toc-document-classification-with-sentiment-analysis-nltk-vader" class="nav-link" data-scroll-target="#document-classification-with-sentiment-analysis-nltk-vader">Document Classification with Sentiment Analysis (NLTK VADER)</a></li>
+  <li><a href="#document-classification-with-sentiment-analysis-textblob" id="toc-document-classification-with-sentiment-analysis-textblob" class="nav-link" data-scroll-target="#document-classification-with-sentiment-analysis-textblob">Document Classification with Sentiment Analysis (TextBlob)</a></li>
+  <li><a href="#document-classification-with-sentiment-analysis-nltk-vader-and-textblob" id="toc-document-classification-with-sentiment-analysis-nltk-vader-and-textblob" class="nav-link" data-scroll-target="#document-classification-with-sentiment-analysis-nltk-vader-and-textblob">Document Classification with Sentiment Analysis (NLTK VADER and TextBlob)</a></li>
+  </ul></li>
+  <li><a href="#discussions-and-gap-analysis" id="toc-discussions-and-gap-analysis" class="nav-link" data-scroll-target="#discussions-and-gap-analysis">Discussions and Gap Analysis</a>
+  <ul class="collapse">
+  <li><a href="#inclusion-of-sentiment-analysis-in-document-classification" id="toc-inclusion-of-sentiment-analysis-in-document-classification" class="nav-link" data-scroll-target="#inclusion-of-sentiment-analysis-in-document-classification"><strong>Inclusion of Sentiment Analysis in Document Classification</strong></a></li>
+  <li><a href="#named-entities" id="toc-named-entities" class="nav-link" data-scroll-target="#named-entities"><strong>Named Entities</strong></a></li>
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source"><strong>Data Source</strong></a></li>
+  <li><a href="#technical-limitations" id="toc-technical-limitations" class="nav-link" data-scroll-target="#technical-limitations"><strong>Technical Limitations</strong></a></li>
+  <li><a href="#dynamic-nature-of-fake-news" id="toc-dynamic-nature-of-fake-news" class="nav-link" data-scroll-target="#dynamic-nature-of-fake-news"><strong>Dynamic Nature of Fake News</strong></a></li>
+  </ul></li>
+  <li><a href="#future-work-and-conclusion" id="toc-future-work-and-conclusion" class="nav-link" data-scroll-target="#future-work-and-conclusion">Future Work and Conclusion</a>
+  <ul class="collapse">
+  <li><a href="#named-entity-recognition-ner" id="toc-named-entity-recognition-ner" class="nav-link" data-scroll-target="#named-entity-recognition-ner"><strong>Named Entity Recognition (NER)</strong></a></li>
+  <li><a href="#extension-of-data-source-scope" id="toc-extension-of-data-source-scope" class="nav-link" data-scroll-target="#extension-of-data-source-scope"><strong>Extension of Data Source Scope</strong></a></li>
+  <li><a href="#regular-updating-of-dataset" id="toc-regular-updating-of-dataset" class="nav-link" data-scroll-target="#regular-updating-of-dataset"><strong>Regular Updating of Dataset</strong></a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><strong>References</strong></a></li>
   </ul>
 </nav>
     </div>
@@ -196,12 +216,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">August 26, 2024</p>
-    </div>
-  </div>
   
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
@@ -220,16 +234,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>The proliferation of fake news is a growing global concern, impacting public opinion, political processes, and trust in media institutions. Fake news is defined as fabricated information that mimics news media content in form but not in organizational process or intent (Lazer, et al., 2018). The spread of misinformation poses significant challenges to foster an informed citizenry as it makes people more susceptible to political misinterpretations (Guess, et al., 2020), thereby increasing the challenge of upholding credibility and integrity of information sources.</p>
-<p>Many experiments have been designed and conducted to put Machine Learning techniques to the test in detecting fake from true news. Our project seeks to determine if detection accuracy can be improved with additional features from sentiment analysis and topic modelling. &nbsp;Sentiment analysis discerns the emotional tone of text, thereby providing insights to how information is framed and its potential impact on readers. Topic modelling identifies topics according to words that co-occur frequently to assess prevalent topics present in fake news.</p>
+<p>Many experiments have been designed and conducted to put Machine Learning techniques to the test in detecting fake from true news. Our project seeks to determine if detection accuracy can be improved with additional features from sentiment analysis. &nbsp;Sentiment analysis discerns the emotional tone of text, thereby providing insights to how information is framed and its potential impact on readers.</p>
 <p>The dataset used in this project is the “<a href="https://www.kaggle.com/code/therealsampat/fake-news-detection/input?select=True.csv">Fake News Detection</a>” dataset from Kaggle. It contains fake and real news from 31 May 2015 to 19 Feb 2018. The two classes of data are separated into the respective “Fake” and “True” files, which will be combined for our analysis.</p>
 </section>
 <section id="methodology" class="level2">
 <h2 class="anchored" data-anchor-id="methodology">Methodology</h2>
 <p>We adopted a sequential approach to the analysis that is summarized in the flow chart below:</p>
-<p><img src="images/clipboard-3748887779.png" class="img-fluid"></p>
+<p><img src="images/clipboard-418630220.png" class="img-fluid"></p>
 <p>Firstly, the separate “Fake” and “True” files had to be merged into one for analysis. To differentiate between the fake and real news after merging for classification, labels were assigned to each record from the same file, 0 for real news and 1 for fake news. After merging both files, the title and text columns are concatenated to create a corpus for text preprocessing.</p>
 <p>Next, preprocessing steps involving tokenization, stop word removal, and stemming are applied on the corpus. It was discovered that some words, such as days of the week and “say” or “said”, appeared in high frequency and did not help to distinguish one document from another. It is reasonable that these words appear frequently in news reports as they provide details on incidents which often include reported speech. In view of the above, we included these words as stop words to be removed from the corpus.</p>
-<p>While some experiments have shown that sentiment analysis is useful in different systems and tools used for detecting fake news, few experiments included the use of topic modelling to train the classification model. In our methodology, the sentiment analysis scores, and most dominant topics are included as features to train and test the classification algorithm.</p>
+<p>After identifying the best model, additional features such as sentiment analysis scores (including compound score from NLTK’s VADER and subjectivity and polarity scores from TextBlob) were incorporated into the model to evaluate their impact on enhancing the model’s performance. This is due to the fact that sentiment analysis has been shown to be a potentially powerful tool in identifying fake news, as will be elaborated later in the article.</p>
 <p>One challenge is the size of the corpus containing more than 40,000 documents. Choosing a model that can work efficiently with this corpus size will be a crucial factor.</p>
 <p>Finally, three classification methods are used to find the best performing model in classifying fake news.</p>
 <p>The following sections will go into the codes used and describe their functions.</p>
@@ -783,19 +797,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="document-classification---baseline" class="level2">
 <h2 class="anchored" data-anchor-id="document-classification---baseline">Document Classification - Baseline</h2>
-<p>As the project aims to understand the impact of using sentiment analysis and topic modelling to improve the accuracy of fake news classification using machine learning techniques, a baseline classification model is trained using only the processed data that excludes additional features.</p>
+<p>As the project aims to understand the impact of using sentiment analysis to improve the accuracy of fake news classification using machine learning techniques, a baseline classification model is trained using only the processed data that excludes additional features.</p>
 <p>Two model evaluation methods are explored in this project. The Train-Test Split Method is used and validated using the evaluation metrics, the K-Fold Cross Validation Method is used. As mentioned in the previous section, three classification models are employed in this project: XGBoost, SVM, and Logistic Regression.</p>
 <p>First, the processed data is split into 70% for training and 30% for testing. This ratio is decided as it provides sufficient data to train the classification models (31,429 records), and adequate data to evaluate the performance of the models (13,469 records). Furthermore, this split also balances the computational resources required to train the models and leaves enough data for K-Fold Cross Validation.</p>
 <p>Next, the processed data is vectorized using the TfidfVectorizer, which converts raw strings into a matrix of Term Frequency-Inverse Document Frequency (TF-IDF) features. This allows a higher weightage to be assigned to words that occur less frequently in the corpus as these words are more discriminative. The split X_train data is vectorized using the .fit_transform() function while the X_test data is vectorized using the .transform() function.</p>
 <p>Next, we define a function to return the evaluation results for each model. The function makes predictions using the test data and calculates the evaluation metrics. The metrics are calculated using the classification_report() function from sklearn and it includes the precision, recall, f1-score, and support. The function also generates the confusion matrix created using the confusion_matrix() function from sklearn and the AUC-ROC curve, which plots true positive rate against false positive rate. This function can be called with each model to evaluate them separately.</p>
 <p>Using the train-test split method alone may introduce bias that is an over- or underestimation of the performance of a model. K-fold cross-validation can be used to conduct a systematic evaluation of the model (Kohavi, 1995).</p>
 <p>To achieve this, we wrote another function to evaluate each model using the k-fold evaluation method, where k = 10 in this project. This is implemented using the StratifiedKFold function from sklearn. This function splits the entire vectorized data set into 10 equal-sized parts with approximately similar proportions of class 0 and class 1 data. Next, we evaluated each model 10 times, each time using one fold as the validation set, and the average of the performance over 10 rounds of training and validation is used as the overall performance metric. This is achieved using the cross_validate() function from sklearn, and the precision, recall, f1-score, and support scores are created using the make_scorer() function from sklearn.</p>
-<p>After obtaining the results of the baseline model, the data frame is fitted with features from the subsequent analyses – sentiment analysis using VADER and TextBlob, and topic modelling. The train-test split method and k-fold cross-validation are applied to the corpus with the addition of the following features:</p>
+<p>After obtaining the results of the baseline model, the data frame is fitted with features from the subsequent analyses – sentiment analysis using VADER and TextBlob. The train-test split method and k-fold cross-validation are applied to the corpus with the addition of the following features:</p>
 <ul>
 <li><p>Compound score from VADER</p></li>
 <li><p>Polarity and Subjectivity scores from TextBlob</p></li>
 <li><p>Compound score from VADER, and Polarity and Subjectivity scores from TextBlob</p></li>
-<li><p>Polarity and Subjectivity scores from TextBlob, and most dominant topic from LDA</p></li>
 </ul>
 <p>But first, let’s consider the performance of a simple baseline solution without any additional features. This can be performed using the code chunks below.</p>
 <section id="simple-train---test-model-evaluation" class="level3">
@@ -974,14 +987,13 @@ AUC-ROC Curve:</code></pre>
 <span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Perform cross-validation</span></span>
 <span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>    scores <span class="op">=</span> cross_validate(pipeline, X, y, cv<span class="op">=</span>cv, scoring<span class="op">=</span>scoring)</span>
-<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Cross-validation scores for </span><span class="sc">{</span>model_name<span class="sc">}</span><span class="ss">:"</span>)</span>
-<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Precision: </span><span class="sc">{</span>scores[<span class="st">'test_precision'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Recall: </span><span class="sc">{</span>scores[<span class="st">'test_recall'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"F1-score: </span><span class="sc">{</span>scores[<span class="st">'test_f1_score'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Mean accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Standard deviation: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>std()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Cross-validation scores for </span><span class="sc">{</span>model_name<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Precision: </span><span class="sc">{</span>scores[<span class="st">'test_precision'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Recall: </span><span class="sc">{</span>scores[<span class="st">'test_recall'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"F1-score: </span><span class="sc">{</span>scores[<span class="st">'test_f1_score'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Mean accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Standard deviation: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>std()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now, it is possible to evaluate our models, starting with XGBoost. Due to the nature of k-fold validation, the process would take longer than simple train-test evaluation:</p>
 <div class="cell" data-execution_count="25">
@@ -1025,7 +1037,20 @@ Mean accuracy: 0.9220677072040985
 Standard deviation: 0.0031227689149698145</code></pre>
 </div>
 </div>
-<p>It is possible to detect a slight increase in each evaluation metric for the three models. Moving forward, it can be determined that XGBoost and k-fold cross validation can be used for further experimentation.</p>
+<p>It is possible to detect a slight increase in each evaluation metric for the three models. Moving forward, it can be determined that XGBoost and k-fold cross validation can be used for further experimentation. The baseline results using XGBoost can be stored for later comparison.</p>
+<div class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>pipeline <span class="op">=</span> Pipeline(steps<span class="op">=</span>[</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'vectorizer'</span>, TfidfVectorizer(tokenizer<span class="op">=</span>dummy, preprocessor<span class="op">=</span>dummy, token_pattern<span class="op">=</span><span class="va">None</span>, ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>), min_df<span class="op">=</span><span class="fl">0.1</span>)),</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'model'</span>, models[<span class="st">'XGBoost'</span>])</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Use stratified k-fold cross-validation</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">10</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform cross-validation</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> cross_validate(pipeline, X, y, cv<span class="op">=</span>cv, scoring<span class="op">=</span>scoring)</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>scores_baseline <span class="op">=</span> [scores[<span class="st">'test_f1_score'</span>].mean(), scores[<span class="st">'test_accuracy'</span>].mean()]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <p>Following the determination of a model and evaluation method, Sentiment Analysis can be performed in order to understand the sentiments of fake news versus real news and to potentially create new features for fake news detection with machine learning.</p>
 </section>
 </section>
@@ -1046,13 +1071,13 @@ Standard deviation: 0.0031227689149698145</code></pre>
 </ul>
 <p>The compound score is used as a feature in the classification model as it represents the overall sentiment of each document. The compound score is the sum of the valence scores of each word in the lexicon, normalized to be between -1 and +1 (Swarnkar, 2020).</p>
 <p>First, we load the SentimentIntensityAnalyzer into a variable.</p>
-<div class="cell" data-execution_count="28">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>sen_ana <span class="op">=</span> SentimentIntensityAnalyzer()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>sen_ana <span class="op">=</span> SentimentIntensityAnalyzer()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s test how the results of the analyzer are displayed.</p>
-<div class="cell" data-execution_count="29">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sen_ana.polarity_scores(<span class="st">'I love quiz'</span>))</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sen_ana.polarity_scores(<span class="st">'I hate quiz'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="30">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sen_ana.polarity_scores(<span class="st">'I love quiz'</span>))</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sen_ana.polarity_scores(<span class="st">'I hate quiz'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>{'neg': 0.0, 'neu': 0.192, 'pos': 0.808, 'compound': 0.6369}
 {'neg': 0.787, 'neu': 0.213, 'pos': 0.0, 'compound': -0.5719}</code></pre>
@@ -1060,16 +1085,16 @@ Standard deviation: 0.0031227689149698145</code></pre>
 </div>
 <p>We can see that the first statement is rated to be very positive while the second statement is considered very negative, which makes sense with a cursory inspection.</p>
 <p>Instead of having all four scores combined as above, it would be easier for analysis if they’re stored in separate columns. To do so, we can assign each of the score to a new column in the data frame.</p>
-<div class="cell" data-execution_count="30">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_compound'</span>]  <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'compound'</span>])</span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_neg'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'neg'</span>])</span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_neu'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'neu'</span>])</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_pos'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'pos'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="31">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_compound'</span>]  <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'compound'</span>])</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_neg'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'neg'</span>])</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_neu'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'neu'</span>])</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'nltk_pos'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: sen_ana.polarity_scores(x)[<span class="st">'pos'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>It is now possible to see the average sentiment scores by class of articles.</p>
-<div class="cell" data-execution_count="31">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>df.groupby(<span class="st">'class'</span>)[[<span class="st">'nltk_neg'</span>,<span class="st">'nltk_neu'</span>,<span class="st">'nltk_pos'</span>,<span class="st">'nltk_compound'</span>]].mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="31">
+<div class="cell" data-execution_count="32">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>df.groupby(<span class="st">'class'</span>)[[<span class="st">'nltk_neg'</span>,<span class="st">'nltk_neu'</span>,<span class="st">'nltk_pos'</span>,<span class="st">'nltk_compound'</span>]].mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="32">
 <div>
 
 
@@ -1112,16 +1137,16 @@ Standard deviation: 0.0031227689149698145</code></pre>
 </div>
 </div>
 <p>It can be observed that the sentiment differences between the two classes of fake and true news are not significantly divergent based on their mean scores. A visualization might help to further elucidate any potential differences.</p>
-<div class="cell" data-execution_count="32">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_neg"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">0</span>, <span class="dv">0</span>])</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_neu"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">0</span>, <span class="dv">1</span>])</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_pos"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">1</span>, <span class="dv">0</span>])</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_compound"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">1</span>, <span class="dv">1</span>])</span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="33">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_neg"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">0</span>, <span class="dv">0</span>])</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_neu"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">0</span>, <span class="dv">1</span>])</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_pos"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">1</span>, <span class="dv">0</span>])</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"nltk_compound"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>,ax<span class="op">=</span>axs[<span class="dv">1</span>, <span class="dv">1</span>])</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="fake_news_files/figure-html/cell-33-output-1.png" width="1141" height="756"></p>
+<p><img src="fake_news_files/figure-html/cell-34-output-1.png" width="1141" height="756"></p>
 </div>
 </div>
 </section>
@@ -1134,14 +1159,14 @@ Standard deviation: 0.0031227689149698145</code></pre>
 <li><p>Subjectivity: quantifies the amount of personal opinion and factual information contained in the text between 0 and 1. Higher subjectivity means that the text contains personal opinion than facts</p></li>
 </ul>
 <p>Let’s see a demonstration of TextBlob in Python.</p>
-<div class="cell" data-execution_count="33">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>texts <span class="op">=</span> [<span class="st">'I love quiz'</span>, <span class="st">'I hate quiz'</span>]</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create TextBlob objects with the text</span></span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Analyze sentiments and print</span></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> text <span class="kw">in</span> texts:</span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>    sentiment <span class="op">=</span> TextBlob(text).sentiment</span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Sentiment for '</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">': </span><span class="sc">{</span>sentiment<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="34">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>texts <span class="op">=</span> [<span class="st">'I love quiz'</span>, <span class="st">'I hate quiz'</span>]</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create TextBlob objects with the text</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Analyze sentiments and print</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> text <span class="kw">in</span> texts:</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    sentiment <span class="op">=</span> TextBlob(text).sentiment</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Sentiment for '</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">': </span><span class="sc">{</span>sentiment<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Sentiment for 'I love quiz': Sentiment(polarity=0.5, subjectivity=0.6)
 Sentiment for 'I hate quiz': Sentiment(polarity=-0.8, subjectivity=0.9)</code></pre>
@@ -1149,17 +1174,17 @@ Sentiment for 'I hate quiz': Sentiment(polarity=-0.8, subjectivity=0.9)</code></
 </div>
 <p>Similar to VADER, TextBlob identified the first statement as having a positive polarity score while the second as having a negative polarity score. It is important to note that even though a cursory examination shows both statements to be equally subjective, TextBlob indicates that one is more subjective than the other.</p>
 <p>TextBlob can be applied to our corpus and the resulting scores can be stored in their own respective columns.</p>
-<div class="cell" data-execution_count="34">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'textblob_sentiment'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: TextBlob(x).sentiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
 <div class="cell" data-execution_count="35">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'textblob_polarity'</span>] <span class="op">=</span> df[<span class="st">'textblob_sentiment'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.polarity)</span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'textblob_subjectivity'</span>] <span class="op">=</span> df[<span class="st">'textblob_sentiment'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.subjectivity)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'textblob_sentiment'</span>] <span class="op">=</span> df[<span class="st">'text'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: TextBlob(x).sentiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="36">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'textblob_polarity'</span>] <span class="op">=</span> df[<span class="st">'textblob_sentiment'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.polarity)</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'textblob_subjectivity'</span>] <span class="op">=</span> df[<span class="st">'textblob_sentiment'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.subjectivity)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Next, the mean polarity and subjectivity scores from TextBlob can be calculated.</p>
-<div class="cell" data-execution_count="36">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>sentiment_means <span class="op">=</span> df.groupby(<span class="st">'class'</span>)[[<span class="st">'textblob_polarity'</span>, <span class="st">'textblob_subjectivity'</span>]].mean()</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sentiment_means)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="37">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>sentiment_means <span class="op">=</span> df.groupby(<span class="st">'class'</span>)[[<span class="st">'textblob_polarity'</span>, <span class="st">'textblob_subjectivity'</span>]].mean()</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sentiment_means)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       textblob_polarity  textblob_subjectivity
 class                                          
@@ -1168,19 +1193,332 @@ class
 </div>
 </div>
 <p>Once again, the difference between the Fake and True news classes do not seem to be significant. It might be useful to visualize the distribution of scores in order to confirm this observation.</p>
-<div class="cell" data-execution_count="37">
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"textblob_polarity"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>, ax <span class="op">=</span> axs[<span class="dv">0</span>])</span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"textblob_subjectivity"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>, ax <span class="op">=</span> axs[<span class="dv">1</span>])</span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="38">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"textblob_polarity"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>, ax <span class="op">=</span> axs[<span class="dv">0</span>])</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>sns.histplot(df, x<span class="op">=</span><span class="st">"textblob_subjectivity"</span>, hue<span class="op">=</span><span class="st">"class"</span>, stat<span class="op">=</span><span class="st">"count"</span>, ax <span class="op">=</span> axs[<span class="dv">1</span>])</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="fake_news_files/figure-html/cell-38-output-1.png" width="1141" height="756"></p>
+<p><img src="fake_news_files/figure-html/cell-39-output-1.png" width="1141" height="756"></p>
 </div>
 </div>
+<p>Let’s combine all the scores into one table for easier comparison.</p>
+<div class="cell" data-execution_count="39">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>nltk_sentiment <span class="op">=</span> df.groupby(<span class="st">'class'</span>)[[<span class="st">'nltk_neg'</span>,<span class="st">'nltk_neu'</span>,<span class="st">'nltk_pos'</span>,<span class="st">'nltk_compound'</span>]].mean()</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>textblob_sentiment <span class="op">=</span> df.groupby(<span class="st">'class'</span>)[[<span class="st">'textblob_polarity'</span>, <span class="st">'textblob_subjectivity'</span>]].mean()</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>summary_table <span class="op">=</span> pd.concat([nltk_sentiment,textblob_sentiment],axis <span class="op">=</span> <span class="dv">1</span>)</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>summary_table.index <span class="op">=</span> [<span class="st">'True'</span>,<span class="st">'Fake'</span>]</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">'display.max_columns'</span>, <span class="dv">7</span>)</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>summary_table</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="39">
+<div>
 
 
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">nltk_neg</th>
+<th data-quarto-table-cell-role="th">nltk_neu</th>
+<th data-quarto-table-cell-role="th">nltk_pos</th>
+<th data-quarto-table-cell-role="th">nltk_compound</th>
+<th data-quarto-table-cell-role="th">textblob_polarity</th>
+<th data-quarto-table-cell-role="th">textblob_subjectivity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">True</td>
+<td>0.078701</td>
+<td>0.839465</td>
+<td>0.081833</td>
+<td>0.055346</td>
+<td>0.053636</td>
+<td>0.360700</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Fake</td>
+<td>0.101657</td>
+<td>0.805650</td>
+<td>0.092697</td>
+<td>-0.109791</td>
+<td>0.056655</td>
+<td>0.452103</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>It can be seen that Fake News have an NLTK Negative mean score closer to –1 (0.101657), indicating that Fake News articles contain more words linked to negative emotions than real true news. However, if TextBlob scores are considered, the Polarity score for True News is slightly smaller, indicating that True News is more negative. Yet, these scores are so similar that it might not indicate a meaningful difference. At the same time, it is possible that Fake News, in general, contain more emotions, either negative or positive, compared to True News. This is reflected in Fake News higher score for NLTK Positive Sentiment (0.092697) compared to True News (0.081833). By encompassing both more negative and positive emotions, the mean TextBlob Polarity score for Fake News can be normalized.</p>
+<p>On the other hand, the Subjectivity scores exhibit a larger difference between Fake (0.452103) and True News (0.3607), reflecting the potential for Fake News to contain more opinions than facts compared to True News. Histograms visualizing the distribution difference between True and Fake news can be referenced in the Appendix.</p>
+<p>Because a difference seems to exist between True News and Fake News for different sentiment categories, the idea that sentiment scores can be added as a feature for the classification task is further reinforced.</p>
+<p>In the following section, the document classification model using XGBoost and k-fold cross validation will be refitted to a set of features including the vectorized text of the corpus as well as the compound sentiment scores from NLTK (Compound Score) and TextBlob (Polarity Score) and subjectivity score from TextBlob (Subjectivity Score). Each of these feature will be added sequentially, then combined together to discern their effect on model performance.</p>
 </section>
+</section>
+<section id="document-classification-with-sentiment-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="document-classification-with-sentiment-analysis">Document Classification with Sentiment Analysis</h2>
+<section id="document-classification-with-sentiment-analysis-nltk-vader" class="level3">
+<h3 class="anchored" data-anchor-id="document-classification-with-sentiment-analysis-nltk-vader">Document Classification with Sentiment Analysis (NLTK VADER)</h3>
+<p>Firstly, we can perform document classification using NLTK’s compound score with XGBoost and k-fold cross validation.</p>
+<p>Only one step is added to the process, which is to use hstack from numpy in order to stack the features column wise after vectorization of text features.</p>
+<div class="cell" data-execution_count="40">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the dependent and independent variables</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> df[<span class="st">'text_preprocessed'</span>]</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>x_sentiment_compound <span class="op">=</span> df[<span class="st">'nltk_compound'</span>].values.reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'class'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="41">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create features with compound sentiment score</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dummy(tokens):</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tokens</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>vectorizer <span class="op">=</span> TfidfVectorizer(tokenizer<span class="op">=</span>dummy, </span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>                             preprocessor<span class="op">=</span>dummy, </span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>                             token_pattern<span class="op">=</span><span class="va">None</span>, </span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>                             ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>), </span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>                             min_df<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>                             </span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>x_feature <span class="op">=</span> vectorizer.fit_transform(x)</span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>x_compound <span class="op">=</span> hstack((x_feature,x_sentiment_compound))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="42">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>scoring <span class="op">=</span> {<span class="st">'accuracy'</span> : make_scorer(accuracy_score), </span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>           <span class="st">'precision'</span> : make_scorer(precision_score),</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>           <span class="st">'recall'</span> : make_scorer(recall_score), </span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>           <span class="st">'f1_score'</span> : make_scorer(f1_score)}</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> xgb.XGBClassifier()</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Use stratified k-fold cross-validation</span></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">10</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform cross-validation</span></span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> cross_validate(model, x_compound, y, cv<span class="op">=</span>cv, scoring<span class="op">=</span>scoring)</span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>scores_nltk <span class="op">=</span> [scores[<span class="st">'test_f1_score'</span>].mean(),scores[<span class="st">'test_accuracy'</span>].mean()]</span>
+<span id="cb53-15"><a href="#cb53-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-16"><a href="#cb53-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Cross-validation scores for XGBoost:"</span>)</span>
+<span id="cb53-17"><a href="#cb53-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb53-18"><a href="#cb53-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Precision: </span><span class="sc">{</span>scores[<span class="st">'test_precision'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb53-19"><a href="#cb53-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Recall: </span><span class="sc">{</span>scores[<span class="st">'test_recall'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb53-20"><a href="#cb53-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"F1-score: </span><span class="sc">{</span>scores[<span class="st">'test_f1_score'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb53-21"><a href="#cb53-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb53-22"><a href="#cb53-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Standard deviation: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>std()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Cross-validation scores for XGBoost:
+Accuracy: [0.96525612 0.96659243 0.96481069 0.95924276 0.96458797 0.97238307
+ 0.96859688 0.97238307 0.96680775 0.96658499]
+Precision: 0.9668479660630778
+Recall: 0.9696350362581343
+F1-score: 0.9682334814359199
+Mean accuracy: 0.9667245744485035
+Standard deviation: 0.0036598976506881397</code></pre>
+</div>
+</div>
+<p>It can be observed that the F1 score and mean accuracy both demonstrate a marginal increase of around 0.01%, showing that adding features related to sentiment analysis could possibly make a difference. The next section will explore the use of TextBlob’s sentiment and subjectivity scores as features and the combined sets of NLTK and TextBlob features.</p>
+</section>
+<section id="document-classification-with-sentiment-analysis-textblob" class="level3">
+<h3 class="anchored" data-anchor-id="document-classification-with-sentiment-analysis-textblob">Document Classification with Sentiment Analysis (TextBlob)</h3>
+<div class="cell" data-execution_count="43">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the dependent and independent variables</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> df[<span class="st">'text_preprocessed'</span>]</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>x_sentiment_polarity <span class="op">=</span> df[<span class="st">'textblob_polarity'</span>].values.reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>x_sentiment_subjectivity <span class="op">=</span> df[<span class="st">'textblob_subjectivity'</span>].values.reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'class'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="44">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create features with polarity and subjectivity sentiment score</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dummy(tokens):</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tokens</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>vectorizer <span class="op">=</span> TfidfVectorizer(tokenizer<span class="op">=</span>dummy, preprocessor<span class="op">=</span>dummy, token_pattern<span class="op">=</span><span class="va">None</span>, ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>), min_df<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>x_feature <span class="op">=</span> vectorizer.fit_transform(x)</span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>x_pol_sub <span class="op">=</span> hstack((x_feature, x_sentiment_polarity, x_sentiment_subjectivity))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="45">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>scoring <span class="op">=</span> {<span class="st">'accuracy'</span> : make_scorer(accuracy_score), </span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>           <span class="st">'precision'</span> : make_scorer(precision_score),</span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>           <span class="st">'recall'</span> : make_scorer(recall_score), </span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>           <span class="st">'f1_score'</span> : make_scorer(f1_score)}</span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> xgb.XGBClassifier()</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Use stratified k-fold cross-validation</span></span>
+<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">10</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform cross-validation</span></span>
+<span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> cross_validate(model, x_pol_sub, y, cv<span class="op">=</span>cv, scoring<span class="op">=</span>scoring)</span>
+<span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a>scores_textblob <span class="op">=</span> [scores[<span class="st">'test_f1_score'</span>].mean(),scores[<span class="st">'test_accuracy'</span>].mean()]</span>
+<span id="cb57-15"><a href="#cb57-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-16"><a href="#cb57-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Cross-validation scores for XGBoost:"</span>)</span>
+<span id="cb57-17"><a href="#cb57-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb57-18"><a href="#cb57-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Precision: </span><span class="sc">{</span>scores[<span class="st">'test_precision'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb57-19"><a href="#cb57-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Recall: </span><span class="sc">{</span>scores[<span class="st">'test_recall'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb57-20"><a href="#cb57-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"F1-score: </span><span class="sc">{</span>scores[<span class="st">'test_f1_score'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb57-21"><a href="#cb57-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb57-22"><a href="#cb57-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Standard deviation: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>std()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Cross-validation scores for XGBoost:
+Accuracy: [0.9674833  0.97060134 0.96035635 0.96213808 0.96592428 0.9714922
+ 0.96815145 0.97349666 0.97037202 0.96858989]
+Precision: 0.9672716036051199
+Recall: 0.9714239558244728
+F1-score: 0.9693375411244309
+Mean accuracy: 0.9678605559444741
+Standard deviation: 0.003903097924174063</code></pre>
+</div>
+</div>
+</section>
+<section id="document-classification-with-sentiment-analysis-nltk-vader-and-textblob" class="level3">
+<h3 class="anchored" data-anchor-id="document-classification-with-sentiment-analysis-nltk-vader-and-textblob">Document Classification with Sentiment Analysis (NLTK VADER and TextBlob)</h3>
+<div class="cell" data-execution_count="46">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the dependent and independent variables</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> df[<span class="st">'text_preprocessed'</span>]</span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>x_sentiment_compound <span class="op">=</span> df[<span class="st">'nltk_compound'</span>].values.reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>x_sentiment_polarity <span class="op">=</span> df[<span class="st">'textblob_polarity'</span>].values.reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>x_sentiment_subjectivity <span class="op">=</span> df[<span class="st">'textblob_subjectivity'</span>].values.reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'class'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="47">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create features with compound, polarity, subjecctivity scores</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dummy(tokens):</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tokens</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>vectorizer <span class="op">=</span> TfidfVectorizer(tokenizer<span class="op">=</span>dummy, preprocessor<span class="op">=</span>dummy, token_pattern<span class="op">=</span><span class="va">None</span>, ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>), min_df<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>x_feature <span class="op">=</span> vectorizer.fit_transform(x)</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>x_combined <span class="op">=</span> hstack((x_feature, x_sentiment_compound, x_sentiment_polarity, x_sentiment_subjectivity))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="48">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>scoring <span class="op">=</span> {<span class="st">'accuracy'</span> : make_scorer(accuracy_score), </span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>           <span class="st">'precision'</span> : make_scorer(precision_score),</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>           <span class="st">'recall'</span> : make_scorer(recall_score), </span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>           <span class="st">'f1_score'</span> : make_scorer(f1_score)}</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> xgb.XGBClassifier()</span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Use stratified k-fold cross-validation</span></span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">10</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-11"><a href="#cb61-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform cross-validation</span></span>
+<span id="cb61-12"><a href="#cb61-12" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> cross_validate(model, x_combined, y, cv<span class="op">=</span>cv, scoring<span class="op">=</span>scoring)</span>
+<span id="cb61-13"><a href="#cb61-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-14"><a href="#cb61-14" aria-hidden="true" tabindex="-1"></a>scores_nltk_textblob <span class="op">=</span> [scores[<span class="st">'test_f1_score'</span>].mean(),scores[<span class="st">'test_accuracy'</span>].mean()]</span>
+<span id="cb61-15"><a href="#cb61-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-16"><a href="#cb61-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Cross-validation scores for XGBoost:"</span>)</span>
+<span id="cb61-17"><a href="#cb61-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb61-18"><a href="#cb61-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Precision: </span><span class="sc">{</span>scores[<span class="st">'test_precision'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb61-19"><a href="#cb61-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Recall: </span><span class="sc">{</span>scores[<span class="st">'test_recall'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb61-20"><a href="#cb61-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"F1-score: </span><span class="sc">{</span>scores[<span class="st">'test_f1_score'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb61-21"><a href="#cb61-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean accuracy: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>mean()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb61-22"><a href="#cb61-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Standard deviation: </span><span class="sc">{</span>scores[<span class="st">'test_accuracy'</span>]<span class="sc">.</span>std()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Cross-validation scores for XGBoost:
+Accuracy: [0.96859688 0.97037862 0.96503341 0.96280624 0.96636971 0.97060134
+ 0.96837416 0.97305122 0.97104032 0.96769882]
+Precision: 0.9682607191411726
+Recall: 0.9714238833009515
+F1-score: 0.9698313664439555
+Mean accuracy: 0.9683950721412053
+Standard deviation: 0.0029093480197024363</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="49">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>pd.DataFrame([scores_baseline, scores_nltk,scores_textblob,scores_nltk_textblob], columns <span class="op">=</span> [<span class="st">'F1-score'</span>,<span class="st">'Accuracy'</span>], index <span class="op">=</span> [<span class="st">'Baseline XGBoost'</span>,<span class="st">'NLTK VADER'</span>,<span class="st">'TextBlob'</span>,<span class="st">'Combined'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="49">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">F1-score</th>
+<th data-quarto-table-cell-role="th">Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Baseline XGBoost</td>
+<td>0.966180</td>
+<td>0.964564</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">NLTK VADER</td>
+<td>0.968233</td>
+<td>0.966725</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">TextBlob</td>
+<td>0.969338</td>
+<td>0.967861</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Combined</td>
+<td>0.969831</td>
+<td>0.968395</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>All three models that incorporated sentiment analysis scores (NLTK VADER, TextBlob, and Combined) showed an improvement in model performance compared to the baseline XGBoost model. These findings correlate with the studies cited that sentiment analysis may be a useful feature for enhancing model performance.</p>
+</section>
+</section>
+<section id="discussions-and-gap-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="discussions-and-gap-analysis">Discussions and Gap Analysis</h2>
+<section id="inclusion-of-sentiment-analysis-in-document-classification" class="level3">
+<h3 class="anchored" data-anchor-id="inclusion-of-sentiment-analysis-in-document-classification"><strong>Inclusion of Sentiment Analysis in Document Classification</strong></h3>
+<p>The results of document classification using the results of sentiment analysis as additional features exhibit improvements over base classification models using only text as features. This shows that the consideration of sentiment analysis could be a fruitful endeavor in the identification of fake news. Additionally, it reinforces the idea that fake news tends to have more emotion expressors than regular news to incite an emotional response from readers. What is lacking, however, is a word-sentiment dictionary which might be more appropriate to the context of news articles. Such a dictionary might further improve the results of the classifications by allowing for better calculation of sentiment scores.</p>
+</section>
+<section id="named-entities" class="level3">
+<h3 class="anchored" data-anchor-id="named-entities"><strong>Named Entities</strong></h3>
+<p>In news articles, it is very common for named entities to be used that might not be recognized in dictionaries, and with the lack of recognition, also comes the lack of context surrounding the entities. If the model can recognize these entities, this would then further enhance how it differentiates real news from fake news as there is additional information for the model to consider.</p>
+</section>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source"><strong>Data Source</strong></h3>
+<p>The Kaggle dataset that was used seems to likely be from the United States. Most of the fake news were related to America’s politics and thus the model has been tuned to pick up keywords along this theme. This means that if we were to apply this model to datasets from around the world, the model might not be as applicable or accurate anymore as the topics identified will likely not be as relevant. For example, news about Trump’s inauguration might not be as big in Singapore, and thus if the model was used as-is to run on Singapore’s news, the results produced would thereby not be as accurate.</p>
+</section>
+<section id="technical-limitations" class="level3">
+<h3 class="anchored" data-anchor-id="technical-limitations"><strong>Technical Limitations</strong></h3>
+<p>As we were dealing with a large dataset and performing complex NLP tasks, we faced constraints such as computational resources and processing speed issues. Running the code sometimes took more than an hour, due to the nature of the computations that we were running. This was quite inefficient, as we needed to test multiple models and had several revisions of code, resulting in us having to spend time allowing the code to load.</p>
+</section>
+<section id="dynamic-nature-of-fake-news" class="level3">
+<h3 class="anchored" data-anchor-id="dynamic-nature-of-fake-news"><strong>Dynamic Nature of Fake News</strong></h3>
+<p>As technology evolves, so do the methods of dissemination of fake news. With ever-changing tactics to deceive the masses, static models that are not continually updated will not be able to adapt to any emerging trends. As such, if the model is not regularly refreshed, it will sooner or later become obsolete and inaccurate.</p>
+</section>
+</section>
+<section id="future-work-and-conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="future-work-and-conclusion">Future Work and Conclusion</h2>
+<section id="named-entity-recognition-ner" class="level3">
+<h3 class="anchored" data-anchor-id="named-entity-recognition-ner"><strong>Named Entity Recognition (NER)</strong></h3>
+<p>Named Entity Recognition (NER) can extract important entities mentioned in news articles, such as the names of politicians, organizations, or locations. By analyzing the entities mentioned in both fake and real news, patterns may emerge that could indicate the credibility or authenticity of the article. Additionally, by analyzing the context surrounding named entities, NER can help detect instances of misinformation or propaganda. For example, if a fake news article mentions a well-known organization or individual in a misleading context, NER can help identify the discrepancy between the entity’s actual role or stance and how it is portrayed in the article.</p>
+</section>
+<section id="extension-of-data-source-scope" class="level3">
+<h3 class="anchored" data-anchor-id="extension-of-data-source-scope"><strong>Extension of Data Source Scope</strong></h3>
+<p>To tackle the second issue, a future extension of this project would then be to re-train the model based on local news. This would then help to include more local topics on top of the American news (as Singapore is so interlinked to the rest of the world, American news would not be completely irrelevant, so keeping this would not be completely useless). The accuracy and precision of the model would then be improved, and thereby we will be able to use this model for local news as well.</p>
+</section>
+<section id="regular-updating-of-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="regular-updating-of-dataset"><strong>Regular Updating of Dataset</strong></h3>
+<p>Our model will need to be updated regularly with more recent articles to ensure that it can continue to stay relevant and continue to identify fake news accurately, even those disseminated with new methods of trickery.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references"><strong>References</strong></h2>
+<p>Ajao, O., Bhowmik, D., &amp; Zargari, S. (2019). Sentiment Aware Fake News Detection on Online Social Networks. <em>ICASSP 2019 - 2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</em>, 2507–2511. <a href="https://doi.org/10.1109/ICASSP.2019.8683170" class="uri">https://doi.org/10.1109/ICASSP.2019.8683170</a></p>
+<p>Bakir, V., &amp; McStay, A. (2018). Fake News and The Economy of Emotions. <em>Digital Journalism</em>, 6:2, 154-175. doi:https://doi.org/10.1080/21670811.2017.1345645</p>
+<p>Guess, A., Lockett, L., Benjamin, L., Montgomery, J., Nyhan, B., &amp; Reifler, J. (2020). “Fake news” may have limited effects on political participation beyond increasing beliefs in false claims. <em>Harvard Kennedy School (HKS) Misinformation Review</em>. doi:https://doi.org/10.37016/mr-2020-004</p>
+<p>Horner, C., Galletta, D., Crawford, J., &amp; Shirsat, A. (2021). Emotions: The Unexplored Fuel of Fake News on Social Media. <em>Journal of Management Information Systems</em>, 38:4, 1039-1066. doi:https://doi.org/10.1080/07421222.2021.1990610</p>
+<p>Kohavi, R. (1995). A Study of Cross-Validation and Bootstrap for Accuracy Estimation and Model Selection. <em>International Joint Conference on Arti</em>, Vol. 14, pp.&nbsp;1137–1145. doi:http://frostiebek.free.fr/docs/Machine%20Learning/validation-1.pdf</p>
+<p>Lazer, D. M., Baum, M., Benkler, Y., Berinsky, A., Greenhill, K., Menczer, F., . . . Zittrain, J. (2018). The science of fake news. <em>Science359</em>, 1094-1096. doi:https://doi.org/10.1126/science.aao2998</p>
+<p>Liu, B. (2020). Introduction. In B. Liu, <em>Sentiment Analysis Mining Opinions, Sentiments, and Emotions</em> (pp.&nbsp;1-17). Cambridge University Press. doi:https://doi.org/10.1017/9781108639286.002</p>
+<p>Swarnkar, N. (2020, May 21). <em>VADER Sentiment Analysis: A Complete Guide, Algo Trading and More</em>. Retrieved from QuantInsti: https://blog.quantinsti.com/vader-sentiment/</p>
+<p>Zhang, X., Cao, J., Li, X., Sheng, Q., Zhong, L., &amp; Shu, K. (2021). Mining Dual Emotion for Fake News Detection. <em>Proceedings of the Web Conference 2021</em>, 3465–3476. <a href="https://doi.org/10.1145/3442381.3450004" class="uri">https://doi.org/10.1145/3442381.3450004</a></p>
+
+
 </section>
 
 </main> <!-- /main -->
