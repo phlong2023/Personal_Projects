@@ -768,7 +768,7 @@ As technology evolves, so do the methods of dissemination of fake news. With eve
 
 Named Entity Recognition (NER) can extract important entities mentioned in news articles, such as the names of politicians, organizations, or locations. By analyzing the entities mentioned in both fake and real news, patterns may emerge that could indicate the credibility or authenticity of the article. Additionally, by analyzing the context surrounding named entities, NER can help detect instances of misinformation or propaganda. For example, if a fake news article mentions a well-known organization or individual in a misleading context, NER can help identify the discrepancy between the entity's actual role or stance and how it is portrayed in the article.
 
-### **Extension of Data Source Scope** 
+### **Extension of Data Source Scope**
 
 To tackle the second issue, a future extension of this project would then be to re-train the model based on local news. This would then help to include more local topics on top of the American news (as Singapore is so interlinked to the rest of the world, American news would not be completely irrelevant, so keeping this would not be completely useless). The accuracy and precision of the model would then be improved, and thereby we will be able to use this model for local news as well.
 

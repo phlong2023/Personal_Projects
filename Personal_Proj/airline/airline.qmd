@@ -17,7 +17,16 @@ Main language/tool: Python
 
 The airline industry operates in a highly competitive environment where retaining customers and ensuring their loyalty is crucial for sustainable growth. Airlines often offer loyalty programs to incentivise repeated business and cultivate a loyal customer base. However, with a huge volume of customer and flight data available, airlines face the challenge of effectively analysing their customer habits, and thereby segmenting these customers, to tailor marketing strategies and enhance customer experiences.
 
+For this project, we have with an airline dataset from Kaggle which consisted of two files: one contains information regarding the customer’s loyalty, such as their membership tier and their customer lifetime value (CLV) which is based on the total amount that they have spent with the airline thus far. This file consists of 16 variables. The other contains the flight history of these customers from 2017 to 2018 with 10 variables.
+
 ## Business Problem
+
+The central business problem is how can we extract value from our members? With this question in mind, we defined two broad objectives:
+
+1.  Development, or how to extract more value from existing members
+2.  Retention, or how to preserve members & reduce cost of churn
+
+How these objectives can be translated into solutions and then into Data Science Tasks can be seen in the diagram below.
 
 ![](images/clipboard-4224624296.png)
 
@@ -26,7 +35,6 @@ The airline industry operates in a highly competitive environment where retainin
 ### Load Required Packages
 
 ```{python}
-import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -492,7 +500,7 @@ plt.ylabel('Total Individual Flights Booked')
 plt.legend([], [], frameon=False)
 
 plt.subplot(rows, cols, 6)
-sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x, palette=colour)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightswithCompanions', hue=x, palette=colour)
 plt.title(f'Distribution of Flights with Companions by {label}')
 plt.xlabel(label)
 plt.ylabel('Total Flights with Companions Flights Booked')
@@ -621,7 +629,7 @@ plt.ylabel('Total Individual Flights Booked')
 plt.legend([], [], frameon=False)
 
 plt.subplot(rows, cols, 6)
-sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightswithCompanions', hue=x)
 plt.title(f'Distribution of Flights with Companions by {label}')
 plt.xlabel(label)
 plt.ylabel('Total Flights with Companions Flights Booked')
@@ -746,7 +754,7 @@ plt.ylabel('Total Individual Flights Booked')
 plt.legend([], [], frameon=False)
 
 plt.subplot(rows, cols, 6)
-sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightswithCompanions', hue=x)
 plt.title(f'Distribution of Flights with Companions by {label}')
 plt.xlabel(label)
 plt.ylabel('Total Flights with Companions Flights Booked')
@@ -893,7 +901,7 @@ plt.legend([], [], frameon=False)
 plt.xticks(rotation=80)
 
 plt.subplot(rows, cols, 6)
-sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x, palette=col_map)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightswithCompanions', hue=x, palette=col_map)
 plt.title(f'Distribution of Flights with Companions by {label}')
 plt.xlabel(label)
 plt.ylabel('Total Flights with Companions Flights Booked')
@@ -1022,7 +1030,7 @@ plt.ylabel('Total Individual Flights Booked')
 plt.legend([], [], frameon=False)
 
 plt.subplot(rows, cols, 6)
-sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightswithCompanions', hue=x)
 plt.title(f'Distribution of Flights with Companions by {label}')
 plt.xlabel(label)
 plt.ylabel('Total Flights with Companions Flights Booked')
@@ -1478,3 +1486,140 @@ loyalty_df_metric = loyalty_df_cluster.copy()
 # Remove all customers with 0 months of membership and 0 flight flown
 loyalty_df_metric = loyalty_df_metric[loyalty_df_metric['TotalDistance']!=0]
 ```
+
+```{python}
+# Calculate Customers' Average Monthly CLV
+loyalty_df_metric['MonthsOfMembership'] = loyalty_df_metric['MonthsOfMembership'].apply(lambda x: 1 if x== 0 else x)
+loyalty_df_metric['AvgCLV'] = loyalty_df_metric['CLV']/loyalty_df_metric['MonthsOfMembership']
+```
+
+```{python}
+# Calculate Customers' Unit Revenue based on the Total Flights over the last 2 years
+loyalty_df_metric['UnitRevenue'] = (loyalty_df_metric['AvgCLV']*24)/loyalty_df_metric['TotalTotalFlights']
+
+loyalty_df_metric['UnitRevenue'] = np.where(
+    (loyalty_df_metric['MonthsOfMembership'] == 1) & (loyalty_df_metric['TotalTotalFlights']==1),
+    loyalty_df_metric['AvgCLV'],
+    loyalty_df_metric['UnitRevenue']
+)
+```
+
+#### Promotions based on no differentiation (one large customer group)
+
+```{python}
+# This function will determine the optimal customer index for the optimal coupon value
+def promo_ob3_v2(customers):  
+    marketing_cost = 0.2
+    l = np.array(customers['UnitRevenue'].sort_values())
+    return l[np.argmax(np.add.accumulate(l) - l*marketing_cost*len(customers))]*marketing_cost
+```
+
+```{python}
+# Calculate profit and revenue based on no segmentation
+m_cost = 0.2
+
+revenue_unsegmented = sum(loyalty_df_metric['UnitRevenue'][loyalty_df_metric['UnitRevenue']*m_cost <= promo_ob3_v2(loyalty_df_metric)])
+profit_unsegmented = revenue_unsegmented - promo_ob3_v2(loyalty_df_metric)*len(loyalty_df_metric)
+
+print(f"Without customer segmentation:\nProfit is {profit_unsegmented}") 
+print(f"Profit margin is {profit_unsegmented/revenue_unsegmented}")
+print(f'Total revenue is {revenue_unsegmented}')
+print(f'Total cost is:', promo_ob3_v2(loyalty_df_metric)*len(loyalty_df_metric))
+```
+
+#### Differentiated promotions based on categorical characteristics
+
+```{python}
+loyalty_df_metric['target_customer'] = loyalty_df_metric['Education'] + loyalty_df_metric['LoyaltyCard'] + loyalty_df_metric['MaritalStatus']
+loyalty_df_metric['target_customer_groups'] = loyalty_df_metric['target_customer'].apply(lambda x: 'target' if x == 'BachelorAuroraMarried' else 'other')
+```
+
+```{python}
+labels = list(set(loyalty_df_metric['target_customer']))
+```
+
+```{python}
+# Calculate profit and revenue based on grouped segmentations
+
+def promo_ob3_v3(customers, group_label): 
+    marketing_cost = 0.2
+    l = np.array(customers[customers['target_customer']==group_label]['UnitRevenue'].sort_values())
+    return l[np.argmax(np.add.accumulate(l) - l*marketing_cost*len(customers[customers['target_customer']==group_label]))]*marketing_cost
+
+```
+
+```{python}
+profits = []
+revenue = []
+cost = []
+for i in labels:
+    m_cost = 0.2
+    revenue_segmented = sum(loyalty_df_metric['UnitRevenue'][(loyalty_df_metric['UnitRevenue']*m_cost <= promo_ob3_v3(loyalty_df_metric,i)) & (loyalty_df_metric['target_customer']==i)])
+    profit_segmented = revenue_segmented - promo_ob3_v3(loyalty_df_metric,i)*len(loyalty_df_metric[loyalty_df_metric['target_customer']==i])
+    cost.append(promo_ob3_v3(loyalty_df_metric,i)*len(loyalty_df_metric[loyalty_df_metric['target_customer']==i]))
+    revenue.append(revenue_segmented)
+    profits.append(profit_segmented)
+
+print(f"With customer segmentation:\nProfit is {sum(profits)}") 
+print(f"Profit margin is {sum(profits)/sum(revenue)}")
+print(f'Total revenue is {sum(revenue)}')
+print(f'Total cost is {sum(cost)}')
+```
+
+#### Differentiated promotions based on k-means clusters
+
+```{python}
+labels = [1,2,3]
+```
+
+```{python}
+# Calculate profit and revenue based on grouped segmentations
+
+def promo_ob3_v3(customers, cluster_num): 
+    marketing_cost = 0.2
+    l = np.array(customers[customers['cluster']==cluster_num]['UnitRevenue'].sort_values())
+    return l[np.argmax(np.add.accumulate(l) - l*marketing_cost*len(customers[customers['cluster']==cluster_num]))]*marketing_cost
+
+```
+
+```{python}
+profits = []
+revenue = []
+cost = []
+for i in labels:
+    m_cost = 0.2
+    revenue_segmented = sum(loyalty_df_metric['UnitRevenue'][(loyalty_df_metric['UnitRevenue']*m_cost <= promo_ob3_v3(loyalty_df_metric,i)) & (loyalty_df_metric['cluster']==i)])
+    profit_segmented = revenue_segmented - promo_ob3_v3(loyalty_df_metric,i)*len(loyalty_df_metric[loyalty_df_metric['cluster']==i])
+    cost.append(promo_ob3_v3(loyalty_df_metric,i)*len(loyalty_df_metric[loyalty_df_metric['cluster']==i]))
+    revenue.append(revenue_segmented)
+    profits.append(profit_segmented)
+
+print(f"With customer segmentation:\nProfit is {sum(profits)}") 
+print(f"Profit margin is {sum(profits)/sum(revenue)}")
+print(f'Total revenue is {sum(revenue)}')
+print(f'Total cost is {sum(cost)}')
+```
+
+#### Crafting a new metric to balance raw profit and profit margin
+
+Instead of just measuring solutions based on profit margin as a metric, we can create a new metric to add in the raw profit amount as an additional factor to add nuance to the metric. This can be caculated with the following formula:
+
+$Margin Profit Score = log_{10}(Profit^2)*\frac{Profit}{Revenue}$
+
+```{python}
+test_df = pd.DataFrame({'method':['m1','m2','m3'],
+                        'profit':[38505,50930,185147],
+                        'revenue':[216637,232994,1021297]})
+```
+
+```{python}
+test_df['log'] = np.log(50*test_df['profit'])
+test_df['margin'] = (test_df['profit']/test_df['revenue'])
+weight = 2
+test_df['margin_profit_score'] = (np.log10(test_df['profit'])**weight)*((test_df['profit'])/test_df['revenue'])
+test_df
+```
+
+Using this new Margin Profit Score, we see that the segmentation based on K-means clustering (m3) now become the most optimal solution because it has the highest amount of raw profit, but because of our logarithmic scaling, it is not that much larger than segmentation by categorical features because profit margin still plays a large role.
+
+What we can learn from this slight departure is that a more customized metric might be better able to capture the appropriate mix of raw profit and profit margin that the airline desires.

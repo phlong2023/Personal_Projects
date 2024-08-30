@@ -11,6 +11,8 @@ website:
             href: Personal_Proj/LISA/Take-Home_Ex1.html
           - text: Untangling Fact from Falsehood Using NLP
             href: Personal_Proj/Fake_News_Detection/fake_news.html
+          - text: IN PROGRESS Develop & Retain Valuable Airline Customers
+            href: Personal_Proj/airline/airline.html
     right:
       - href: index.html
         text: Home
