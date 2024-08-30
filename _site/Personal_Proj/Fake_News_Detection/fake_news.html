@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore - Untangling Fact from Falsehood Using NLP</title>
+<title>Phan Hoang Long’s Personal Site - Untangling Fact from Falsehood Using NLP</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -109,7 +109,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container">
     <a class="navbar-brand" href="../../index.html">
-    <span class="navbar-title">Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore</span>
+    <span class="navbar-title">Phan Hoang Long’s Personal Site</span>
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -119,13 +119,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-personal-projects" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
- <span class="menu-text">Personal Projects</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-data-analytics-projects" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Data Analytics Projects</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-personal-projects">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-data-analytics-projects">    
         <li>
     <a class="dropdown-item" href="../../Personal_Proj/LISA/Take-Home_Ex1.html" rel="" target="">
- <span class="dropdown-text">Local Indicators of Spatial Association (LISA)</span></a>
+ <span class="dropdown-text">Analysis of Geospatial Distribution of Bus Ridership by Origin Bus Stop in Singapore</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="../../Personal_Proj/Fake_News_Detection/fake_news.html" rel="" target="">
@@ -220,7 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">August 28, 2024</p>
+      <p class="date-modified">August 29, 2024</p>
     </div>
   </div>
     
@@ -296,7 +296,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
 <span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    importlib.import_module(<span class="st">'textblob'</span>)</span>
 <span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">ImportError</span>:</span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    subprocess.check_call([<span class="st">'pip'</span>, <span class="st">'install'</span>, <span class="st">'textblob'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    subprocess.check_call([<span class="st">'pip'</span>, <span class="st">'install'</span>, <span class="st">'textblob'</span>])</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">'display.max_columns'</span>, <span class="dv">7</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="load-dataset" class="level3">
@@ -1209,8 +1211,7 @@ class
 <span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>textblob_sentiment <span class="op">=</span> df.groupby(<span class="st">'class'</span>)[[<span class="st">'textblob_polarity'</span>, <span class="st">'textblob_subjectivity'</span>]].mean()</span>
 <span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>summary_table <span class="op">=</span> pd.concat([nltk_sentiment,textblob_sentiment],axis <span class="op">=</span> <span class="dv">1</span>)</span>
 <span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>summary_table.index <span class="op">=</span> [<span class="st">'True'</span>,<span class="st">'Fake'</span>]</span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">'display.max_columns'</span>, <span class="dv">7</span>)</span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>summary_table</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>summary_table</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="39">
 <div>
 
