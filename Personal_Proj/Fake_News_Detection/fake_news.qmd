@@ -88,6 +88,9 @@ try:
     importlib.import_module('textblob')
 except ImportError:
     subprocess.check_call(['pip', 'install', 'textblob'])
+    
+pd.set_option('display.max_columns', 7)
+
 ```
 
 ### Load Dataset
@@ -573,7 +576,6 @@ nltk_sentiment = df.groupby('class')[['nltk_neg','nltk_neu','nltk_pos','nltk_com
 textblob_sentiment = df.groupby('class')[['textblob_polarity', 'textblob_subjectivity']].mean()
 summary_table = pd.concat([nltk_sentiment,textblob_sentiment],axis = 1)
 summary_table.index = ['True','Fake']
-pd.set_option('display.max_columns', 7)
 summary_table
 ```
 

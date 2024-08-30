@@ -1,0 +1,1480 @@
+---
+title: "Develop & Retain Valuable Airline Customers"
+date-modified: 'last-modified'
+format: html
+execute: 
+  eval: true # run the code live
+  echo: true # all code will appear
+  warning: false # hide all warnings
+editor: visual
+---
+
+This project was done as part of ISSS621: Data Science for Business. The analysis was performed jointly with Duong Thu Huong, Janet Toa Zi Ying, Kylie Tan Jing Yi, Lim Yong Yin, Noel Ng Ser Ying.
+
+Main language/tool: Python
+
+## Introduction
+
+The airline industry operates in a highly competitive environment where retaining customers and ensuring their loyalty is crucial for sustainable growth. Airlines often offer loyalty programs to incentivise repeated business and cultivate a loyal customer base. However, with a huge volume of customer and flight data available, airlines face the challenge of effectively analysing their customer habits, and thereby segmenting these customers, to tailor marketing strategies and enhance customer experiences.
+
+## Business Problem
+
+![](images/clipboard-4224624296.png)
+
+## Import Libraries and Datasets
+
+### Load Required Packages
+
+```{python}
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.gridspec as gridspec
+import colorcet as cc
+import seaborn as sns
+from datetime                   import datetime
+from scipy.stats                import pearsonr
+from scipy.stats                import pointbiserialr
+from scipy.stats                import chi2_contingency
+from scipy.stats                import kruskal
+
+# Data processing
+from sklearn.preprocessing      import LabelEncoder, OneHotEncoder
+
+# Correlation Matrix
+from scipy                      import stats
+
+# Machine learning
+import sklearn
+from sklearn.cluster            import KMeans, AgglomerativeClustering
+from sklearn.neighbors          import KNeighborsClassifier
+from sklearn.linear_model       import LogisticRegression
+import xgboost
+
+# Imbalanced learning
+from imblearn.over_sampling     import SMOTE
+from imblearn.under_sampling    import RandomUnderSampler
+from imblearn.pipeline          import make_pipeline
+
+# Model selection and evaluation
+from sklearn                    import metrics
+from sklearn.metrics            import classification_report, accuracy_score, cohen_kappa_score, f1_score, recall_score, precision_score, confusion_matrix, roc_curve
+from sklearn.metrics            import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.model_selection    import train_test_split
+
+# Clustering
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+# Suppress all warnings
+import warnings
+warnings.filterwarnings('ignore')
+
+pd.set_option('display.max_columns', 10)
+
+```
+
+## Define Helper Functions and Constants
+
+```{python}
+# constant
+
+RANDOM_STATE = 42
+```
+
+```{python}
+# calculate months between 2 dates
+
+def calculate_month_interval(start_time, end_time):
+    return (end_time.year - start_time.year)*12 + (end_time.month - start_time.month)
+```
+
+```{python}
+# Confusion matrix
+
+def cf_matrix_labels(cf_matrix):
+    
+    group_names = ['True Negatives','False Positives','False Negatives','True Positives']
+    group_counts = ['{0:0.0f}'.format(value) for value in cf_matrix.flatten()]
+    group_percentages = ['{0:.2%}'.format(value) for value in cf_matrix.flatten()/np.sum(cf_matrix)]
+    labels = [f'{v1}\n{v2}\n{v3}' for v1, v2, v3 in zip(group_names,group_counts,group_percentages)]
+    labels = np.asarray(labels).reshape(2,2)
+    
+    return labels
+```
+
+```{python}
+# customize classification report
+
+def get_classification_report(y_true, proba_pred):
+    precision, recall, threshold = metrics.precision_recall_curve(y_true, proba_pred)
+    report_df = pd.DataFrame({
+        'threshold': threshold,
+        'precision': precision[:-1],
+        'recall': recall[:-1]
+    }).assign(
+        f1 = lambda x: 2 * x['recall'] * x['precision'] / (x['recall'] + x['precision']),
+        f2 = lambda x: (5 * x['precision'] * x['recall']) / (4 * x['precision'] + x['recall'])
+    )
+    fig = plt.figure(figsize=(7,7))
+    plt.plot(report_df['threshold'], report_df['precision'], label = 'precision')
+    plt.plot(report_df['threshold'], report_df['recall'], label = 'recall')
+    # plt.plot(report_df['threshold'], report_df['f1'], '--', color='brown', label = 'f1')
+    plt.plot(report_df['threshold'], report_df['f2'], '--', color='green', label = 'f2')
+    plt.xlabel('threshold')
+    plt.ylabel('score')
+    plt.legend(loc='upper center')
+    plt.show()
+    return report_df
+```
+
+## Import Data
+
+### Loyalty History
+
+```{python}
+loyalty_df = pd.read_csv('data/Customer Loyalty History.csv')
+loyalty_df.columns
+```
+
+```{python}
+# remove all space character in column name
+
+loyalty_new_cols = [col.replace(' ', '') for col in loyalty_df.columns]
+loyalty_df = loyalty_df.rename(columns=dict(zip(loyalty_df.columns, loyalty_new_cols)))
+
+loyalty_df.info()
+
+loyalty_df.head()
+
+print('No. of unique customers:', loyalty_df['LoyaltyNumber'].nunique())
+```
+
+### Flight Activity
+
+```{python}
+flight_df = pd.read_csv('data/Customer Flight Activity.csv')
+flight_df.columns
+```
+
+```{python}
+flight_new_col = [col.replace(' ','') for col in flight_df.columns]
+flight_df = flight_df.rename(columns = dict(zip(flight_df.columns,flight_new_col)))
+flight_df.info()
+print(' ')
+flight_df.head()
+print(' ')
+print('No. of recorded flights: ', len(flight_df))
+```
+
+## Data Preparation
+
+### Preliminary Data Cleaning
+
+#### Loyalty History
+
+Summary:
+
+-   Convert data type of LoyaltyNumber, CancellationYear, CancellationMonth
+
+-   Process salary colunn: consider negative salary as missing values, fill all missing values with 0
+
+-   Create 4 columns: EnrollmentDate, EnrollmentYearMonth (YYYY-MM), CancellationDate, CancellationYearMonth (YYYY-MM)
+
+-   Create ChurnIndicator
+
+##### Correcting Data Type
+
+```{python}
+# convert data type
+
+loyalty_df = loyalty_df.assign(
+    LoyaltyNumber = lambda x: x['LoyaltyNumber'].astype(str),
+    CancellationYear = lambda x: x['CancellationYear'].astype('Int64'),
+    CancellationMonth = lambda x: x['CancellationMonth'].astype('Int64')
+)
+```
+
+##### Checking Numeric Columns
+
+```{python}
+loyalty_df.describe()
+```
+
+```{python}
+# records with negative salary
+
+print('Number of records with negative salary:', loyalty_df[loyalty_df['Salary'].le(0)].shape[0])
+loyalty_df[loyalty_df['Salary'].le(0)]
+```
+
+```{python}
+# records with missing salary
+
+print(
+    'Number of records with missing salary:', loyalty_df['Salary'].isna().sum(),
+    '\nPercentage of records with missing salary:', round(loyalty_df['Salary'].isna().sum()*100/loyalty_df.shape[0],2), '%'
+)
+```
+
+```{python}
+# treat negative salary as missing values, fill all missing salary with 0
+
+loyalty_df['Salary'] = loyalty_df['Salary'].fillna(0).where(loyalty_df['Salary'].gt(0), 0)
+print('Number of records with salary = 0:', loyalty_df['Salary'].eq(0).sum())
+```
+
+##### Time column
+
+```{python}
+# EnrollmentDate (type: datetime), EnrollmentYearMonth (type: string, format: YYYY-MM)
+# CancellationDate (type: datetime), CancellationYearMonth (type: string, format: YYYY-MM)
+
+time_membership = ['Enrollment', 'Cancellation']
+
+for i in time_membership: 
+    loyalty_df[f'{i}Date'] = pd.to_datetime(
+        loyalty_df[[f'{i}Year', f'{i}Month']].astype('Float64')\
+        .rename(columns={f'{i}Year': 'YEAR', f'{i}Month': 'MONTH'}).assign(DAY=1)
+    )
+    loyalty_df[f'{i}YearMonth'] = loyalty_df[f'{i}Date'].dt.strftime('%Y-%m')
+    
+loyalty_df.head()
+```
+
+##### Churn Indicator
+
+```{python}
+loyalty_df['ChurnIndicator'] = np.where(loyalty_df['CancellationMonth'].isna().eq(False), 1, 0)
+```
+
+```{python}
+loyalty_df.head()
+```
+
+#### Flight Activity
+
+Summary:
+
+-   Convert data type of LoyaltyNumber
+
+-   Create 2 columns: Date, YearMonth
+
+##### Converting Data Type
+
+```{python}
+
+flight_df['LoyaltyNumber'] = flight_df['LoyaltyNumber'].astype(str)
+```
+
+##### Checking Numeric Columns
+
+```{python}
+flight_df.describe()
+```
+
+From a cursory look, there does not seem to be any abnormality.
+
+##### Time Column
+
+```{python}
+flight_df['Date'] = pd.to_datetime(flight_df[['Year', 'Month']].assign(DAY=1))
+flight_df['YearMonth'] = flight_df['Date'].dt.strftime('%Y-%m')
+```
+
+### Feature Engineering
+
+#### Customer Level
+
+```{python}
+# Number of months of membership
+
+loyalty_df = loyalty_df.assign(
+    ObservationDate = lambda x: x['CancellationDate'].where(x['CancellationDate'].isna().eq(False), flight_df['Date'].max()),
+    MonthsOfMembership = lambda x: x.apply(lambda z: calculate_month_interval(z['EnrollmentDate'], z['ObservationDate']), axis=1)
+).drop(columns='ObservationDate')
+```
+
+```{python}
+# Aggregation on flight activity (sum)
+
+flight_cols = [col for col in flight_df.columns if flight_df[col].dtype in ['int64', 'float64']][2:]
+temp_total_flight = flight_df.groupby(by='LoyaltyNumber', sort=False)[flight_cols].sum()
+temp_total_flight.columns = [f'Total{col}' for col in flight_cols]
+temp_total_flight
+```
+
+```{python}
+# Percentage of Redeemed Points / Accumulated Points
+
+temp_total_flight['PercentagePointsRedeemed'] = temp_total_flight['TotalPointsRedeemed'].where(
+    temp_total_flight['TotalPointsRedeemed'].eq(0),
+    temp_total_flight['TotalPointsRedeemed'].div(temp_total_flight['TotalPointsAccumulated']).round(2)
+)
+temp_total_flight['PercentagePointsRedeemed'].describe()
+```
+
+```{python}
+# Aggregation on flight activity (Monthly average)
+
+temp_monthly_flight = temp_total_flight[['TotalTotalFlights', 'TotalPointsAccumulated']].merge(
+    loyalty_df[['LoyaltyNumber', 'MonthsOfMembership']].set_index('LoyaltyNumber'),
+    how='left', left_index=True, right_index=True
+).assign(
+    MonthlyTotalFlights = lambda x: x['MonthsOfMembership'].where(x['MonthsOfMembership'].eq(0), 
+                                                                  x['TotalTotalFlights'].div(x['MonthsOfMembership']).round(2)), 
+    MonthlyPointsAccumulated = lambda x: x['MonthsOfMembership'].where(x['MonthsOfMembership'].eq(0), 
+                                                                       x['TotalPointsAccumulated'].div(x['MonthsOfMembership']).round(2))
+).iloc[:, 3:]
+
+temp_monthly_flight.describe()
+```
+
+Merge all feature sets to loyalty_df
+
+```{python}
+loyalty_df = loyalty_df.merge(temp_total_flight.reset_index(), how='left', on='LoyaltyNumber')\
+    .merge(temp_monthly_flight.reset_index(), how='left', on='LoyaltyNumber')
+```
+
+```{python}
+loyalty_df.head()
+```
+
+#### Flight Level
+
+```{python}
+flight_df = flight_df.sort_values(by=['Date', 'LoyaltyNumber'])#.set_index('LoyaltyNumber')
+TIME_INDEX = pd.DatetimeIndex(flight_df['Date'])
+```
+
+```{python}
+# Aggregation of flight stats for 1 year, 6 months, 3 months and 1 month lookback
+
+lookback_period = {
+    '1Y': '366D',
+    '6M': '183D',
+    '3M': '93D',
+    '1M': '31D',
+}
+
+temp_lookback_flight_dfs = []
+
+for last, day in lookback_period.items():
+    df = flight_df.groupby(by='LoyaltyNumber', sort=False)[flight_cols]\
+        .rolling(window=day, on=TIME_INDEX, closed='left').sum()\
+        .reset_index().sort_values(by=['Date', 'LoyaltyNumber'])\
+        .drop(columns='level_1').set_index(['LoyaltyNumber', 'Date'])
+    df.columns = [f'Last{last}_{col}' for col in flight_cols]
+    temp_lookback_flight_dfs.append(df)
+
+lookback_flight_df = flight_df[['LoyaltyNumber', 'Date']]
+
+for df in temp_lookback_flight_dfs:
+    lookback_flight_df = lookback_flight_df.merge(df.reset_index(), how='left', on=['LoyaltyNumber', 'Date'])
+
+lookback_flight_df
+```
+
+## Exploratory Data Analysis
+
+### Customer Distribution
+
+```{python}
+cust_eda_loyalty_df = loyalty_df.copy()
+```
+
+```{python}
+# Confirm that dataset only contains Canadian customers
+cust_eda_loyalty_df["Country"].value_counts()
+```
+
+Set churn indicator as categorical data
+
+```{python}
+cust_eda_loyalty_df['ChurnIndicator'] = cust_eda_loyalty_df['ChurnIndicator'].astype("category")
+```
+
+```{python}
+flights_summary = cust_eda_loyalty_df.groupby('MaritalStatus').agg( {'TotalTotalFlights':['sum'], 'TotalFlightswithCompanions': ['sum']}).reset_index()
+
+# Calculate the percentage of flights with companions
+flights_summary['PercentageWithCompanions'] = (flights_summary['TotalFlightswithCompanions'] / flights_summary['TotalTotalFlights']) * 100
+
+# Display the summary DataFrame
+print(flights_summary)
+```
+
+#### Salary Distribution
+
+```{python}
+plt.figure(figsize=(6, 9))
+sns.boxplot(data=cust_eda_loyalty_df, y='Salary', palette='viridis')
+plt.title('Salary Distribution')
+plt.ylabel('Salary')
+plt.xticks(rotation=45)
+plt.show()
+```
+
+#### Gender Distribution
+
+```{python}
+# Check distribution by gender
+
+x = 'Gender'
+label = 'Gender'
+order = ["Female","Male"]
+rows, cols = 5, 3
+
+# Calculate total flights booked by gender
+total_flights = cust_eda_loyalty_df.groupby(x)['TotalTotalFlights'].sum().reset_index()
+total_flights.Gender = total_flights.Gender.astype("category")
+total_flights.Gender = total_flights.Gender.cat.set_categories(order)
+total_flights.sort_values([x])
+
+# Calculate proportion of churned customers by education level
+churn_proportions = cust_eda_loyalty_df.groupby(x)['ChurnIndicator'].value_counts(normalize=True).unstack().fillna(0)
+churn_proportions.columns = ['Not Churn', 'Churn']
+churn_proportions['Not Churn'] *= 100
+churn_proportions['Churn'] *= 100
+churn_proportions.sort_values('Churn', ascending=False, inplace=True)
+
+# Focus on months of membership between 0 to 12 months
+mom12 = cust_eda_loyalty_df[(loyalty_df['MonthsOfMembership'] >= 0) & (loyalty_df['MonthsOfMembership'] <= 12)]
+mom12[x] = pd.Categorical(mom12[x], categories=order, ordered=True)
+mom12 = mom12.sort_values(x)
+
+# Create custom colour mapping to each gender
+colour =  {'Female': 'salmon', 'Male': 'skyblue'}
+
+# Define plot area
+fig, axs = plt.subplots(nrows = rows, ncols = cols, figsize=(20,25))
+
+# Create plots
+plt.subplot(rows, cols, 1)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue=x, palette=colour)
+plt.title(f'Frequency of Customers by {label}')
+plt.xlabel(label)
+plt.ylabel('Count')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 2)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='Salary', hue=x, palette=colour)
+plt.title(f'Distribution of Salary by {label}')
+plt.xlabel(label)
+plt.ylabel('Salary')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 3)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='CLV', hue=x, palette=colour)
+plt.title(f'Distribution of CLV by {label}')
+plt.xlabel(label)
+plt.ylabel('CLV')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 4)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='MonthsOfMembership', hue=x, palette=colour)
+plt.title(f'Distribution of Membership Length (Months) by {label}')
+plt.xlabel(label)
+plt.ylabel('Membership Length (Months)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 5)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsBooked', hue=x, palette=colour)
+plt.title(f'Distribution of Individual Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Individual Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 6)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x, palette=colour)
+plt.title(f'Distribution of Flights with Companions by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights with Companions Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 7)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalTotalFlights', hue=x, palette=colour)
+plt.title(f'Distribution of Total Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 8)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalDistance', hue=x, palette=colour)
+plt.title(f'Distribution of Total Distance Travelled by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Distance')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 9)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='PercentagePointsRedeemed', hue=x, order=order, palette=colour)
+plt.title(f'Distribution of Points Redeemed by {label}')
+plt.xlabel(label)
+plt.ylabel('Points Redeemed (%)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 10)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue='ChurnIndicator', palette="viridis")
+plt.title(f'Frequency of Churn by {label}')
+plt.xlabel(label)
+plt.ylabel('Churn Frequency')
+plt.legend(title='Churn Indicator', loc='upper right')
+
+churn_proportions.plot(kind='bar', stacked=True, ax = axs[3,1], color=['steelblue', 'mediumseagreen'])
+axs[3,1].set(title = f'Proportion of Churn by {label}',
+             xlabel = label,
+             ylabel = 'Churn Proportion (%)')
+axs[3,1].set_xticklabels(axs[3,1].get_xticklabels(), rotation=0)
+
+gs = gridspec.GridSpec(rows, cols, figure=fig)
+ax_big = fig.add_subplot(gs[4, 0:])
+sns.countplot(data=mom12, x='MonthsOfMembership', hue=x, ax=ax_big, palette=colour)
+ax_big.set(title=f'Count of Months of Membership by {label}',
+           xlabel="Months of Membership",
+           ylabel='Count')
+
+axs[3,2].set_axis_off()
+axs[4,0].set_axis_off()
+axs[4,1].set_axis_off()
+axs[4,2].set_axis_off()
+plt.tight_layout()
+
+plt.show()
+```
+
+#### Education Distribution
+
+```{python}
+# Check distribution by education
+
+x = 'Education'
+label = 'Education Level'
+order = ["Doctor", "Master", "Bachelor", "College", "High School or Below"]
+rows, cols = 5, 3
+
+# Calculate total flights booked by education level
+total_flights = cust_eda_loyalty_df.groupby(x)['TotalTotalFlights'].sum().reset_index()
+total_flights.Education = total_flights.Education.astype("category")
+total_flights.Education = total_flights.Education.cat.set_categories(order)
+total_flights.sort_values([x])
+
+# Sort education level in cust_eda_loyalty_df in descending order
+cust_eda_loyalty_df.Education = cust_eda_loyalty_df.Education.astype("category")
+cust_eda_loyalty_df.Education = cust_eda_loyalty_df.Education.cat.set_categories(order)
+cust_eda_loyalty_df.sort_values([x])
+
+# Calculate proportion of churned customers by education level
+churn_proportions = cust_eda_loyalty_df.groupby(x)['ChurnIndicator'].value_counts(normalize=True).unstack().fillna(0)
+churn_proportions.columns = ['Not Churn', 'Churn']
+churn_proportions['Not Churn'] *= 100
+churn_proportions['Churn'] *= 100
+churn_proportions.sort_values('Churn', ascending=False, inplace=True)
+
+# Focus on months of membership between 0 to 12 months
+mom12 = cust_eda_loyalty_df[(cust_eda_loyalty_df['MonthsOfMembership'] >= 0) & (cust_eda_loyalty_df['MonthsOfMembership'] <= 12)]
+mom12[x] = pd.Categorical(mom12[x], categories=order, ordered=True)
+mom12 = mom12.sort_values(x)
+
+# Define plot area
+fig, axs = plt.subplots(nrows = rows, ncols = cols, figsize=(20,25))
+
+# Create plots
+plt.subplot(rows, cols, 1)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue=x)
+plt.title(f'Frequency of Customers by {label}')
+plt.xlabel(label)
+plt.ylabel('Count')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 2)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='Salary', hue=x)
+plt.title(f'Distribution of Salary by {label}')
+plt.xlabel(label)
+plt.ylabel('Salary')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 3)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='CLV', hue=x)
+plt.title(f'Distribution of CLV by {label}')
+plt.xlabel(label)
+plt.ylabel('CLV')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 4)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='MonthsOfMembership', hue=x)
+plt.title(f'Distribution of Membership Length (Months) by {label}')
+plt.xlabel(label)
+plt.ylabel('Membership Length (Months)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 5)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsBooked', hue=x)
+plt.title(f'Distribution of Individual Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Individual Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 6)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x)
+plt.title(f'Distribution of Flights with Companions by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights with Companions Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 7)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalTotalFlights', hue=x)
+plt.title(f'Distribution of Total Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 8)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalDistance', hue=x)
+plt.title(f'Distribution of Total Distance Travelled by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Distance')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 9)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='PercentagePointsRedeemed', hue=x, order=order)
+plt.title(f'Distribution of Points Redeemed by {label}')
+plt.xlabel(label)
+plt.ylabel('Points Redeemed (%)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 10)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue='ChurnIndicator', palette="viridis")
+plt.title(f'Frequency of Churn by {label}')
+plt.xlabel(label)
+plt.ylabel('Churn Frequency')
+plt.legend(title='Churn Indicator', loc='upper right')
+
+churn_proportions.plot(kind='bar', stacked=True, ax = axs[3,1], color=['steelblue', 'mediumseagreen'])
+axs[3,1].set(title = f'Proportion of Churn by {label}',
+             xlabel = label,
+             ylabel = 'Churn Proportion (%)')
+axs[3,1].set_xticklabels(axs[3,1].get_xticklabels(), rotation=0)
+
+gs = gridspec.GridSpec(rows, cols, figure=fig)
+ax_big = fig.add_subplot(gs[4, 0:])
+sns.countplot(data=mom12, x='MonthsOfMembership', hue=x, ax=ax_big)
+ax_big.set(title=f'Count of Months of Membership by {label}',
+           xlabel="Months of Membership",
+           ylabel='Count')
+
+axs[3,2].set_axis_off()
+axs[4,0].set_axis_off()
+axs[4,1].set_axis_off()
+axs[4,2].set_axis_off()
+plt.tight_layout()
+
+plt.show()
+
+```
+
+#### Loyalty Card Distribution
+
+```{python}
+# Check distribution by loyalty card type
+
+x = 'LoyaltyCard'
+label = "Loyalty Card"
+order = ["Star", "Nova", "Aurora"]
+rows, cols = 5, 3
+
+# Calculate total flights booked by loyalty card type
+total_flights = cust_eda_loyalty_df.groupby(x)['TotalTotalFlights'].sum().reset_index()
+total_flights.LoyaltyCard = total_flights.LoyaltyCard.astype("category")
+total_flights.LoyaltyCard = total_flights.LoyaltyCard.cat.set_categories(order)
+total_flights.sort_values([x])
+
+# Calculate proportion of churned customers by loyalty card type
+churn_proportions = cust_eda_loyalty_df.groupby(x)['ChurnIndicator'].value_counts(normalize=True).unstack().fillna(0)
+churn_proportions.columns = ['Not Churn', 'Churn']
+churn_proportions['Not Churn'] *= 100
+churn_proportions['Churn'] *= 100
+churn_proportions.sort_values('Churn', ascending=False, inplace=True)
+
+# Focus on months of membership between 0 to 12 months
+mom12 = cust_eda_loyalty_df[(cust_eda_loyalty_df['MonthsOfMembership'] >= 0) & (cust_eda_loyalty_df['MonthsOfMembership'] <= 12)]
+mom12[x] = pd.Categorical(mom12[x], categories=order, ordered=True)
+mom12 = mom12.sort_values(x)
+
+# Define plot area
+fig, axs = plt.subplots(nrows = rows, ncols = cols, figsize=(20,25))
+
+# Create plots
+plt.subplot(rows, cols, 1)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue=x)
+plt.title(f'Frequency of Customers by {label}')
+plt.xlabel(label)
+plt.ylabel('Count')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 2)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='Salary', hue=x)
+plt.title(f'Distribution of Salary by {label}')
+plt.xlabel(label)
+plt.ylabel('Salary')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 3)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='CLV', hue=x)
+plt.title(f'Distribution of CLV by {label}')
+plt.xlabel(label)
+plt.ylabel('CLV')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 4)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='MonthsOfMembership', hue=x)
+plt.title(f'Distribution of Membership Length (Months) by {label}')
+plt.xlabel(label)
+plt.ylabel('Membership Length (Months)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 5)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsBooked', hue=x)
+plt.title(f'Distribution of Individual Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Individual Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 6)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x)
+plt.title(f'Distribution of Flights with Companions by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights with Companions Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 7)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalTotalFlights', hue=x)
+plt.title(f'Distribution of Total Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 8)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalDistance', hue=x)
+plt.title(f'Distribution of Total Distance Travelled by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Distance')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 9)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='PercentagePointsRedeemed', hue=x, order=order)
+plt.title(f'Distribution of Points Redeemed by {label}')
+plt.xlabel(label)
+plt.ylabel('Points Redeemed (%)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 10)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue='ChurnIndicator', palette="viridis")
+plt.title(f'Frequency of Churn by {label}')
+plt.xlabel(label)
+plt.ylabel('Churn Frequency')
+plt.legend(title='Churn Indicator', loc='upper right')
+
+churn_proportions.plot(kind='bar', stacked=True, ax = axs[3,1], color=['steelblue', 'mediumseagreen'])
+axs[3,1].set(title = f'Proportion of Churn by {label}',
+             xlabel = label,
+             ylabel = 'Churn Proportion (%)')
+axs[3,1].set_xticklabels(axs[3,1].get_xticklabels(), rotation=0)
+
+gs = gridspec.GridSpec(rows, cols, figure=fig)
+ax_big = fig.add_subplot(gs[4, 0:])
+sns.countplot(data=mom12, x='MonthsOfMembership', hue=x, ax=ax_big)
+ax_big.set(title=f'Count of Months of Membership by {label}',
+           xlabel="Months of Membership",
+           ylabel='Count')
+
+axs[3,2].set_axis_off()
+axs[4,0].set_axis_off()
+axs[4,1].set_axis_off()
+axs[4,2].set_axis_off()
+plt.tight_layout()
+
+plt.show()
+```
+
+#### City Distribution
+
+```{python}
+# Check distribution by city
+
+x = 'City'
+label = "City"
+rows, cols = 5, 3
+
+# Create new df to sort in descending order of median of CLV
+median_clv_df = loyalty_df.copy()
+median_clv_df["City"] = pd.Categorical(median_clv_df["City"], categories=median_clv_df.groupby("City")['CLV'].median().sort_values(ascending=False).index, ordered=True)
+
+# Calculate frequency of each city and sort in descending order
+city_counts = cust_eda_loyalty_df[x].value_counts().reset_index()
+city_counts.columns = [x, 'Count']
+city_counts = city_counts.sort_values('Count', ascending=False)
+order = city_counts[x].to_list()
+
+# Sort city in cust_eda_loyalty_df in descending order of frequency
+cust_eda_loyalty_df['City'] = pd.Categorical(cust_eda_loyalty_df['City'], categories=order, ordered=True)
+cust_eda_loyalty_df = cust_eda_loyalty_df.sort_values('City')
+
+# Calculate total flights booked by each city
+total_flights = cust_eda_loyalty_df.groupby(x)['TotalTotalFlights'].sum().reset_index()
+total_flights.City = total_flights.City.astype("category")
+total_flights.City = total_flights.City.cat.set_categories(order)
+total_flights.sort_values([x])
+
+# Calculate proportion of churned customers by city
+churn_proportions = cust_eda_loyalty_df.groupby(x)['ChurnIndicator'].value_counts(normalize=True).unstack().fillna(0)
+churn_proportions.columns = ['Not Churn', 'Churn']
+churn_proportions['Not Churn'] *= 100
+churn_proportions['Churn'] *= 100
+churn_proportions.sort_values('Churn', ascending=False, inplace=True)
+
+# Focus on months of membership between 0 to 12 months
+mom12 = cust_eda_loyalty_df[(cust_eda_loyalty_df['MonthsOfMembership'] >= 0) & (cust_eda_loyalty_df['MonthsOfMembership'] <= 12)]
+mom12[x] = pd.Categorical(mom12[x], categories=order, ordered=True)
+mom12 = mom12.sort_values(x)
+
+# Create custom colour mapping to each city
+palette = cc.cm.glasbey_dark
+colour = [cc.cm.glasbey_dark(i / len(cust_eda_loyalty_df["City"])) for i in range(len(cust_eda_loyalty_df["City"]))]
+col_map = {city: col for city, col in zip(cust_eda_loyalty_df['City'], colour)}
+
+# Define plot area
+fig, axs = plt.subplots(nrows = rows, ncols = cols, figsize=(30,40))
+
+# Create plots
+plt.subplot(rows, cols, 1)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue=x, palette=col_map)
+plt.title(f'Frequency of Customers by {label}')
+plt.xlabel(label)
+plt.ylabel('Count')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 2)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='Salary', hue=x, palette=col_map)
+plt.title(f'Distribution of Salary by {label}')
+plt.xlabel(label)
+plt.ylabel('Salary')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 3)
+sns.boxplot(data=median_clv_df, x=x, y='CLV', hue=x, palette=col_map)
+plt.title(f'Distribution of CLV by {label}')
+plt.xlabel(label)
+plt.ylabel('CLV')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 4)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='MonthsOfMembership', hue=x, palette=col_map)
+plt.title(f'Distribution of Membership Length (Months) by {label}')
+plt.xlabel(label)
+plt.ylabel('Membership Length (Months)')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 5)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsBooked', hue=x, palette=col_map)
+plt.title(f'Distribution of Individual Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Individual Flights Booked')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 6)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x, palette=col_map)
+plt.title(f'Distribution of Flights with Companions by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights with Companions Flights Booked')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 7)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalTotalFlights', hue=x, palette=col_map)
+plt.title(f'Distribution of Total Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights Booked')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 8)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalDistance', hue=x, palette=col_map)
+plt.title(f'Distribution of Total Distance Travelled by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Distance')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 9)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='PercentagePointsRedeemed', hue=x, order=order, palette=col_map)
+plt.title(f'Distribution of Points Redeemed by {label}')
+plt.xlabel(label)
+plt.ylabel('Points Redeemed (%)')
+plt.legend([], [], frameon=False)
+plt.xticks(rotation=80)
+
+plt.subplot(rows, cols, 10)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue='ChurnIndicator', palette="viridis")
+plt.title(f'Frequency of Churn by {label}')
+plt.xlabel(label)
+plt.ylabel('Churn Frequency')
+plt.legend(title='Churn Indicator', loc='upper right')
+plt.xticks(rotation=80)
+
+churn_proportions.plot(kind='bar', stacked=True, ax = axs[3,1], color=['steelblue', 'mediumseagreen'])
+axs[3,1].set(title = f'Proportion of Churn by {label}',
+             xlabel = label,
+             ylabel = 'Churn Proportion (%)')
+axs[3,1].set_xticklabels(axs[3,1].get_xticklabels(), rotation=80)
+
+gs = gridspec.GridSpec(rows, cols, figure=fig)
+ax_big = fig.add_subplot(gs[4, 0:])
+sns.countplot(data=mom12, x='MonthsOfMembership', hue=x, ax=ax_big, palette=col_map)
+ax_big.set(title=f'Count of Months of Membership by {label}',
+           xlabel="Months of Membership",
+           ylabel='Count')
+
+axs[3,2].set_axis_off()
+axs[4,0].set_axis_off()
+axs[4,1].set_axis_off()
+axs[4,2].set_axis_off()
+plt.tight_layout()
+
+plt.show()
+```
+
+#### Enrollment Type Distribution
+
+```{python}
+# Distribution by Enrollment Type
+
+x = 'EnrollmentType'
+label = "Enrollment Type"
+order = ["Standard","2018 Promotion"]
+rows, cols = 5, 3
+
+# Calculate total flights booked by enrollment type
+total_flights = cust_eda_loyalty_df.groupby(x)['TotalTotalFlights'].sum().reset_index()
+total_flights.EnrollmentType = total_flights.EnrollmentType.astype("category")
+total_flights.EnrollmentType = total_flights.EnrollmentType.cat.set_categories(order)
+total_flights.sort_values([x])
+
+# Calculate proportion of churned customers by enrollment type
+churn_proportions = cust_eda_loyalty_df.groupby(x)['ChurnIndicator'].value_counts(normalize=True).unstack().fillna(0)
+churn_proportions.columns = ['Not Churn', 'Churn']
+churn_proportions['Not Churn'] *= 100
+churn_proportions['Churn'] *= 100
+churn_proportions.sort_values('Churn', ascending=False, inplace=True)
+
+# Focus on months of membership between 0 to 12 months
+mom12 = cust_eda_loyalty_df[(cust_eda_loyalty_df['MonthsOfMembership'] >= 0) & (cust_eda_loyalty_df['MonthsOfMembership'] <= 12)]
+mom12[x] = pd.Categorical(mom12[x], categories=order, ordered=True)
+mom12 = mom12.sort_values(x)
+
+# Define plot area
+fig, axs = plt.subplots(nrows = rows, ncols = cols, figsize=(20,25))
+
+# Create plots
+plt.subplot(rows, cols, 1)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue=x)
+plt.title(f'Frequency of Customers by {label}')
+plt.xlabel(label)
+plt.ylabel('Count')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 2)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='Salary', hue=x)
+plt.title(f'Distribution of Salary by {label}')
+plt.xlabel(label)
+plt.ylabel('Salary')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 3)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='CLV', hue=x)
+plt.title(f'Distribution of CLV by {label}')
+plt.xlabel(label)
+plt.ylabel('CLV')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 4)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='MonthsOfMembership', hue=x)
+plt.title(f'Distribution of Membership Length (Months) by {label}')
+plt.xlabel(label)
+plt.ylabel('Membership Length (Months)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 5)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsBooked', hue=x)
+plt.title(f'Distribution of Individual Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Individual Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 6)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalFlightsWithCompanions', hue=x)
+plt.title(f'Distribution of Flights with Companions by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights with Companions Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 7)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalTotalFlights', hue=x)
+plt.title(f'Distribution of Total Flights by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Flights Booked')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 8)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='TotalDistance', hue=x)
+plt.title(f'Distribution of Total Distance Travelled by {label}')
+plt.xlabel(label)
+plt.ylabel('Total Distance')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 9)
+sns.boxplot(data=cust_eda_loyalty_df, x=x, y='PercentagePointsRedeemed', hue=x, order=order)
+plt.title(f'Distribution of Points Redeemed by {label}')
+plt.xlabel(label)
+plt.ylabel('Points Redeemed (%)')
+plt.legend([], [], frameon=False)
+
+plt.subplot(rows, cols, 10)
+sns.countplot(data=cust_eda_loyalty_df, x=x, hue='ChurnIndicator', palette="viridis")
+plt.title(f'Frequency of Churn by {label}')
+plt.xlabel(label)
+plt.ylabel('Churn Frequency')
+plt.legend(title='Churn Indicator', loc='upper right')
+
+churn_proportions.plot(kind='bar', stacked=True, ax = axs[3,1], color=['steelblue', 'mediumseagreen'])
+axs[3,1].set(title = f'Proportion of Churn by {label}',
+             xlabel = label,
+             ylabel = 'Churn Proportion (%)')
+axs[3,1].set_xticklabels(axs[3,1].get_xticklabels(), rotation=0)
+
+gs = gridspec.GridSpec(rows, cols, figure=fig)
+ax_big = fig.add_subplot(gs[4, 0:])
+sns.countplot(data=mom12, x='MonthsOfMembership', hue='EnrollmentType', ax=ax_big)
+ax_big.set(title=f'Count of Months of Membership by {label}',
+           xlabel="Months of Membership",
+           ylabel='Count')
+
+axs[3,2].set_axis_off()
+axs[4,0].set_axis_off()
+axs[4,1].set_axis_off()
+axs[4,2].set_axis_off()
+plt.tight_layout()
+
+plt.show()
+```
+
+#### CLV Distribution
+
+```{python}
+# Check distribution by CLV
+
+plt.figure(figsize=(20,25))
+
+plt.subplot(3, 3, 1)
+sns.lineplot(data=cust_eda_loyalty_df, x='EnrollmentYear', y='CLV', ci=None, marker='o', sort=True)
+plt.title('Customer Lifetime Value by Enrollment Year')
+plt.xlabel('Enrollment Year')
+plt.ylabel('Customer Lifetime Value')
+
+plt.subplot(3, 3, 2)
+sns.lineplot(data=cust_eda_loyalty_df, x='City', y='CLV', ci=None, marker='o', sort=True)
+plt.title('Customer Lifetime Value by City')
+plt.xlabel('City')
+plt.ylabel('Customer Lifetime Value')
+plt.xticks(rotation=80)
+
+plt.subplot(3, 3, 4)
+corr_coeff, _ = pearsonr(cust_eda_loyalty_df['Salary'], cust_eda_loyalty_df['CLV'])
+sns.regplot(data=cust_eda_loyalty_df, x='Salary', y='CLV', 
+            scatter_kws={'s': 50, 'alpha': 0.9, 'edgecolor': 'white'}, 
+            line_kws={'color': 'red'}, marker="o")
+plt.text(0.1, 0.9, f'Correlation Coefficient: {corr_coeff:.2f}', 
+         ha='left', va='baseline', transform=plt.gca().transAxes)
+plt.title('Customer Lifetime Value by Salary')
+plt.xlabel('Salary')
+plt.ylabel('Customer Lifetime Value')
+plt.xticks(rotation=80)
+
+plt.subplot(3, 3, 5)
+corr_coeff, _ = pearsonr(cust_eda_loyalty_df['TotalTotalFlights'], cust_eda_loyalty_df['CLV'])
+sns.regplot(data=cust_eda_loyalty_df, x='TotalTotalFlights', y='CLV', 
+            scatter_kws={'s': 50, 'alpha': 0.9, 'edgecolor': 'white'}, 
+            line_kws={'color': 'red'}, marker="o")
+plt.text(0.1, 0.9, f'Correlation Coefficient: {corr_coeff:.2f}', 
+         ha='left', va='baseline', transform=plt.gca().transAxes)
+plt.title('Customer Lifetime Value by Total Flights Booked')
+plt.xlabel('Total Flights Booked')
+plt.ylabel('Customer Lifetime Value')
+plt.xticks(rotation=80)
+
+plt.subplot(3, 3, 6)
+corr_coeff, _ = pearsonr(cust_eda_loyalty_df['TotalDistance'], cust_eda_loyalty_df['CLV'])
+sns.regplot(data=cust_eda_loyalty_df, x='TotalDistance', y='CLV', 
+            scatter_kws={'s': 50, 'alpha': 0.9, 'edgecolor': 'white'}, 
+            line_kws={'color': 'red'}, marker="o")
+plt.text(0.1, 0.9, f'Correlation Coefficient: {corr_coeff:.2f}', 
+         ha='left', va='baseline', transform=plt.gca().transAxes)
+plt.title('Customer Lifetime Value by Total Distance Travelled')
+plt.xlabel('Total Distance Travelled')
+plt.ylabel('Customer Lifetime Value')
+plt.xticks(rotation=80)
+
+plt.subplot(3, 3, 7)
+corr_coeff, _ = pearsonr(cust_eda_loyalty_df['MonthsOfMembership'], cust_eda_loyalty_df['CLV'])
+sns.regplot(data=cust_eda_loyalty_df, x='MonthsOfMembership', y='CLV', 
+            scatter_kws={'s': 50, 'alpha': 0.9, 'edgecolor': 'white'}, 
+            line_kws={'color': 'red'}, marker="o")
+plt.text(0.1, 0.9, f'Correlation Coefficient: {corr_coeff:.2f}', 
+         ha='left', va='baseline', transform=plt.gca().transAxes)
+plt.title('Customer Lifetime Value by Months of Membership')
+plt.xlabel('Months of Membership')
+plt.ylabel('Customer Lifetime Value')
+plt.xticks(rotation=80)
+
+plt.subplot(3, 3, 8)
+corr_coeff, _ = pearsonr(cust_eda_loyalty_df['TotalPointsAccumulated'], cust_eda_loyalty_df['CLV'])
+sns.regplot(data=cust_eda_loyalty_df, x='TotalPointsAccumulated', y='CLV', 
+            scatter_kws={'s': 50, 'alpha': 0.9, 'edgecolor': 'white'}, 
+            line_kws={'color': 'red'}, marker="o")
+plt.text(0.1, 0.9, f'Correlation Coefficient: {corr_coeff:.2f}', 
+         ha='left', va='baseline', transform=plt.gca().transAxes)
+plt.title('Customer Lifetime Value by Total Points Accumulated')
+plt.xlabel('Total Points Accumulated')
+plt.ylabel('Customer Lifetime Value')
+plt.xticks(rotation=80)
+
+plt.show()
+
+```
+
+### Potential Impact of 2018 Promotion
+
+```{python}
+year_enrollment = cust_eda_loyalty_df.groupby('EnrollmentYear')['EnrollmentYear'].value_counts().reset_index()
+year_enrollment['growth'] = year_enrollment['count'].pct_change()*100
+year_enrollment = year_enrollment.fillna(0)
+year_enrollment['EnrollmentYear'] = year_enrollment['EnrollmentYear'].astype('str')
+year_enrollment
+```
+
+```{python}
+fig, axs = plt.subplots(nrows = 1, ncols = 3, figsize = (15,5))
+
+
+sns.lineplot(year_enrollment[~year_enrollment['EnrollmentYear'].isin(['2012','2013'])], x = 'EnrollmentYear', y='growth',label='growth', ax=axs[0])
+axs[0].set_title('Percentage change in # of customers')
+for x, y in zip(year_enrollment[~year_enrollment['EnrollmentYear'].isin(['2012','2013'])]['EnrollmentYear'], year_enrollment[~year_enrollment['EnrollmentYear'].isin(['2012','2013'])]['growth']):
+    axs[0].text(x, y, f'{y:.2f}%', ha='center', va='bottom')
+
+sns.lineplot(year_enrollment[~year_enrollment['EnrollmentYear'].isin(['2012','2013'])], x = 'EnrollmentYear', y='count',label='count', ax=axs[1])
+axs[1].set_title('Change in # of customers')
+for x, y in zip(year_enrollment[~year_enrollment['EnrollmentYear'].isin(['2012','2013'])]['EnrollmentYear'], year_enrollment[~year_enrollment['EnrollmentYear'].isin(['2012','2013'])]['count']):
+    axs[1].text(x, y, f'{y}', ha='center', va='bottom')
+
+pivot_plot = loyalty_df.groupby(['EnrollmentYear','EnrollmentType']).size().reset_index().pivot(columns='EnrollmentType',index = 'EnrollmentYear', values = 0)
+# Reorder the columns
+desired_order = ['Standard', '2018 Promotion']
+pivot_plot = pivot_plot[desired_order]
+# sns.countplot(loyalty_df[~loyalty_df['EnrollmentYear'].isin(['2012','2013'])], x = 'EnrollmentYear', hue = 'EnrollmentType', multiple='stack', hue_order=['2018 Promotion', 'Standard'])
+pivot_plot.plot(kind='bar', stacked=True, ax = axs[2])
+axs[2].set_title('Change in # of customers')
+
+plt.tight_layout()
+plt.show()
+```
+
+### Number of Enrollment and Cancellation
+
+```{python}
+enrollments = cust_eda_loyalty_df['EnrollmentDate'].dt.to_period('M').value_counts().sort_index()
+cancellations = cust_eda_loyalty_df['CancellationDate'].dropna().dt.to_period('M').value_counts().sort_index()
+
+plt.figure(figsize=(14, 8))
+plt.plot(enrollments.index.astype(str), enrollments.values, label='Enrollments', marker='o')
+plt.plot(cancellations.index.astype(str), cancellations.values, label='Cancellations', marker='o')
+plt.title('Number of Enrollments and Cancellations Over Time')
+plt.xlabel('Date (Year-Month)')
+plt.ylabel('Count')
+plt.xticks(rotation=90)
+plt.legend()
+plt.show()
+```
+
+### Churn Customers
+
+```{python}
+# get all churn customers
+
+churn_monthsofmembership = loyalty_df[loyalty_df['ChurnIndicator'].eq(1)]['MonthsOfMembership'].value_counts().reset_index()\
+    .sort_values(by='MonthsOfMembership')
+    
+# distribution of months of membership
+
+plt.figure(figsize=(7,5))
+sns.lineplot(data=churn_monthsofmembership, x='MonthsOfMembership', y='count')
+plt.xlabel('Months of membership')
+plt.ylabel('Number of customers')
+plt.yticks(np.arange(0, 1400, 200))
+plt.title('Distribution of all customers by months of membership')
+plt.tight_layout()
+plt.show()
+```
+
+## Hypothesis Testing
+
+### Kruskal-Wallis Test for Categorical Features and CLV
+
+```{python}
+# Assuming 'continuous_var' is your continuous variable and 'nominal_var' is your nominal variable
+def kruskal_wallis(df, cont_var, nom_var):
+    groups = [df[df[f'{nom_var}'] == category][f'{cont_var}'] for category in df[f'{nom_var}'].unique()]
+    kruskal_result = stats.kruskal(*groups)
+    print(f"Kruskal-Wallis H-statistic for {nom_var}: {kruskal_result.statistic}, p-value: {kruskal_result.pvalue}")
+```
+
+```{python}
+for i in ['MaritalStatus', 'Education', 'LoyaltyCard']:
+    kruskal_wallis(loyalty_df, 'CLV', i)
+```
+
+## Encouraging Additional Expenditure with Coupon & Customer Segmentation
+
+Creating a new data frame to prevent making unnecessary changes to the main data frame.
+
+```{python}
+loyalty_df_cluster = loyalty_df.copy()
+```
+
+### Defining the Number of Clusters
+
+```{python}
+# Extracting only the numerical features
+cluster_features = ['Salary','CLV','MonthsOfMembership','TotalFlightsBooked',
+       'TotalFlightswithCompanions', 'TotalTotalFlights', 'TotalDistance',
+       'TotalPointsAccumulated', 'TotalPointsRedeemed',
+       'TotalDollarCostPointsRedeemed']
+```
+
+```{python}
+# Select features for clustering
+X = loyalty_df_cluster.loc[:,cluster_features]
+```
+
+```{python}
+# Fit standard scaler
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(X)
+```
+
+```{python}
+# Apply PCA to reduce dimensionality to 2D
+pca = PCA(n_components=3)
+X_pca = pca.fit_transform(scaled_features)
+
+# Get the components
+components = pca.components_
+
+# Create a DataFrame to view component values in order to identify more important features for clustering
+component_df = pd.DataFrame(components, columns=cluster_features, index=['PC1', 'PC2', 'PC3'])
+component_df
+
+```
+
+```{python}
+# Create a graph to determine the number of Principal Components and the features which contribute to its explained variance
+explained_variance = pca.explained_variance_ratio_
+plt.figure(figsize=(7,5))
+plt.plot(range(1, len(explained_variance) + 1), explained_variance.cumsum(), marker='o')
+plt.xlabel('Number of Principal Components')
+plt.ylabel('Cumulative Explained Variance')
+plt.show()
+```
+
+The first 2 Principal Components explain the majority of variance in the dataset. Only the features which are major contributors to the first 2 Princpal Components will be kept for clustering.
+
+```{python}
+# Keeping only certain features based on their importance in the PCA
+cluster_features = ['TotalFlightsBooked', 'TotalTotalFlights', 'TotalDistance',
+       'TotalPointsAccumulated', 'TotalPointsRedeemed',
+       'TotalDollarCostPointsRedeemed']
+```
+
+```{python}
+# Select features for clustering
+X = loyalty_df_cluster.loc[:,cluster_features]
+```
+
+```{python}
+# Fit standard scaler
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(X)
+```
+
+```{python}
+# Calculate within-cluster sum of squares (WCSS) for different values of k
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=2024)
+    kmeans.fit(scaled_features)
+    wcss.append(kmeans.inertia_)
+
+# Plot the elbow method curve
+plt.figure(figsize=(7,5))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method')
+plt.xlabel('Number of Clusters')
+plt.ylabel('WCSS')
+plt.show()
+```
+
+```{python}
+# Calculate  silhouette coefficient for different values of k
+silhoutte_coeff = []
+for i in range(2, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=2024)
+    kmeans.fit(scaled_features)
+    silhoutte_coeff.append(silhouette_score(X,kmeans.labels_))
+
+# Plot the elbow method curve
+plt.figure(figsize=(7,5))
+plt.plot(range(2, 11), silhoutte_coeff)
+plt.title('Elbow Method')
+plt.xlabel('Number of Clusters')
+plt.ylabel('silhouette')
+plt.show()
+```
+
+```{python}
+# Number of clusters
+k = 3
+
+# Initialize model
+kmean = KMeans(n_clusters=k, init='k-means++', max_iter=300, n_init=10, random_state=2024)
+
+# fit model
+kmean.fit(scaled_features)
+
+# get labels
+cluster_labels = kmean.labels_
+
+# Add cluster labels to the DF and adjust the cluster number so that they are more intuitive (cluster 0 will become cluster 1, for example)
+loyalty_df_cluster['cluster'] = cluster_labels+1
+```
+
+```{python}
+# Print the count of points in each cluster
+pd.concat([loyalty_df_cluster['cluster'].value_counts().sort_index().reset_index(),
+loyalty_df_cluster['cluster'].value_counts(normalize=True).sort_index().reset_index()],axis = 1)
+```
+
+```{python}
+# Graph by loyalty card
+fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(20, 20));
+
+c = 0
+for i in range(0,3):
+    for j in range(0, 2):
+        # This determines the x_lim and y_lim by considering the values of the features
+        cluster_0 = loyalty_df_cluster[loyalty_df_cluster['cluster'] == 1][cluster_features[c]]
+        cluster_1 = loyalty_df_cluster[loyalty_df_cluster['cluster'] == 2][cluster_features[c]]
+        cluster_2 = loyalty_df_cluster[loyalty_df_cluster['cluster'] == 3][cluster_features[c]]
+        cluster_3 = loyalty_df_cluster[loyalty_df_cluster['cluster'] == 4][cluster_features[c]]
+        cluster_4 = loyalty_df_cluster[loyalty_df_cluster['cluster'] == 5][cluster_features[c]]
+        cluster_5 = loyalty_df_cluster[loyalty_df_cluster['cluster'] == 6][cluster_features[c]]
+        min_c = min(cluster_0.min(),cluster_1.min(),cluster_2.min(),cluster_3.min(),cluster_4.min(),cluster_5.min())
+        max_c = max(cluster_0.max(),cluster_1.max(),cluster_2.max(),cluster_3.max(),cluster_4.max(),cluster_5.max())
+
+        # This automatically divides the feature into bins based on the entire dataset
+        num_bin = list(np.histogram(loyalty_df_cluster[cluster_features[c]],bins=10)[1])
+        
+        sns.histplot(loyalty_df_cluster[loyalty_df_cluster['cluster']==1], x = cluster_features[c], ax = axs[i,j], stat = 'probability', alpha = 0.3, bins = num_bin, label = 'cluster_1')
+        sns.histplot(loyalty_df_cluster[loyalty_df_cluster['cluster']==2], x = cluster_features[c], ax = axs[i,j], stat = 'probability', alpha = 0.3, bins = num_bin, label = 'cluster_2')
+        sns.histplot(loyalty_df_cluster[loyalty_df_cluster['cluster']==3], x = cluster_features[c], ax = axs[i,j], stat = 'probability', alpha = 0.3, bins = num_bin, label = 'cluster_3')
+        sns.histplot(loyalty_df_cluster[loyalty_df_cluster['cluster']==4], x = cluster_features[c], ax = axs[i,j], stat = 'probability', alpha = 0.3, bins = num_bin, label = 'cluster_4')
+        sns.histplot(loyalty_df_cluster[loyalty_df_cluster['cluster']==5], x = cluster_features[c], ax = axs[i,j], stat = 'probability', alpha = 0.3, bins = num_bin, label = 'cluster_5')
+        sns.histplot(loyalty_df_cluster[loyalty_df_cluster['cluster']==6], x = cluster_features[c], ax = axs[i,j], stat = 'probability', alpha = 0.3, bins = num_bin, label = 'cluster_6')
+        axs[i, j].set_xlim(min_c,max_c)
+        axs[i, j].legend(title='Cluster')
+        c += 1
+                
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+# numerical features for aggregation
+num_features = ['Salary','CLV','MonthsOfMembership','TotalFlightsBooked',
+       'TotalFlightswithCompanions', 'TotalTotalFlights', 'TotalDistance',
+       'TotalPointsAccumulated', 'TotalPointsRedeemed',
+       'TotalDollarCostPointsRedeemed']
+```
+
+```{python}
+median_clusters = loyalty_df_cluster.groupby('cluster')[num_features].median()
+```
+
+```{python}
+# Function to apply colors based on value positions
+def highlight_positions(s):
+    is_min = s.isin(s.nsmallest(1))
+    is_max = s.isin(s.nlargest(1))
+    is_mid = ~is_min & ~is_max
+
+    result = ['background-color: #dddcdc' if v else '' for v in is_min]
+    result = ['background-color: #ffaf93' if v else res for v, res in zip(is_max, result)]
+    result = ['background-color: #93fff5' if v else res for v, res in zip(is_mid, result)]
+    
+    return result
+```
+
+```{python}
+median_clusters = median_clusters.style.apply(highlight_positions)
+```
+
+```{python}
+median_clusters
+```
+
+```{python}
+fig, axs = plt.subplots(nrows = 3, ncols= 2, figsize = (20,20))
+
+c = 0
+
+for i in range(0,3):
+    for j in range(0,2):
+        if i*j == 2:
+            sns.scatterplot(loyalty_df_cluster, x = cluster_features[0], y = cluster_features[-1], hue='cluster', ax = axs[i,j])
+        else:    
+            sns.scatterplot(loyalty_df_cluster, x = cluster_features[c], y = cluster_features[c+1], hue='cluster', ax = axs[i,j])
+        c += 1
+plt.tight_layout()
+plt.show()
+
+```
+
+### Determining Optimal Coupon Values by different segmentation methods
+
+```{python}
+loyalty_df_metric = loyalty_df_cluster.copy()
+```
+
+```{python}
+# Remove all customers with 0 months of membership and 0 flight flown
+loyalty_df_metric = loyalty_df_metric[loyalty_df_metric['TotalDistance']!=0]
+```
