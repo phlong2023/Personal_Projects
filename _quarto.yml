@@ -13,6 +13,10 @@ website:
             href: Personal_Proj/Fake_News_Detection/fake_news.html
           - text: IN PROGRESS Develop & Retain Valuable Airline Customers
             href: Personal_Proj/airline/airline.html
+      - text: Writing Samples
+        menu: 
+          - text: Adult Children of Single Parent
+            href: Personal_Proj/single_parent/single_parent.html
     right:
       - href: index.html
         text: Home
