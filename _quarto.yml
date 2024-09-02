@@ -17,6 +17,8 @@ website:
         menu: 
           - text: Adult Children of Single Parent
             href: Personal_Proj/single_parent/single_parent.html
+          - text: Rapporteur Report for Reinventing Destiny A Conference on the Occasion of Mr Lee Kuan Yew’s 100th Birth Anniversary
+            href: Personal_Proj/reinventing_destiny/reinventing_disney.html
     right:
       - href: index.html
         text: Home
